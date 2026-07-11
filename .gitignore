@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Variables de entorno
+.env
+
+# Pytest
+.pytest_cache/
+
+# Cobertura de pruebas
+.coverage
+htmlcov/
+
+# Playground personal para pruebas rapidas
+playground/
+sandbox/
+test-temp/
+
+# Type checking
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Packaging
+dist/
+build/
+*.egg-info/
+
+# MkDocs
+site/
+
+# Benchmarks
+.benchmarks/
+
+# ia
+CLAUDE.md
+.claude
+.kiro
+.mimocode
+
+# Node stray artifacts (this is a Python project, not JS)
+package.json
+package-lock.json
+node_modules/
+
+# Generated plot output written at the repo root
+/*.html
+
+# Tier generator output (trimmed public builds are generated, never committed here)
+/build/
+
+# Raw conversion-input data must not sit at the datasets root (bundled sample
+# datasets live in src/tradetropy/datasets/_data/). Keep the package lean.
+/src/tradetropy/datasets/*.csv
+

@@ -1,0 +1,86 @@
+[project]
+name = "tradetropy"
+version = "0.2.0"
+description = "A professional backtesting and live trading framework for algorithmic trading strategies with footprint analysis and market microstructure."
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "michiTrader", email = "iden.c63@gmail.com" }
+]
+requires-python = ">=3.12"
+
+# Core runtime dependencies. Installing `pip install tradetropy` gives you the full
+# backtesting, plotting, indicator and data-IO stack. The base binary data
+# format is NumPy .npz (no compiler needed, works everywhere - including
+# Termux/Android). Broker/venue integrations, Parquet and HDF5 IO are optional
+# extras (see [project.optional-dependencies]).
+dependencies = [
+    "bokeh>=3.8,<4",
+    "keyboard>=0.13.5",
+    "numpy>=2.0,<2.5",
+    "pandas>=3.0,<4",
+    "pintar>=0.7.3",
+    "tqdm>=4.67.3",
+]
+
+[project.optional-dependencies]
+# Broker / venue connectors (each pulls only what that integration needs).
+mt5 = ["MetaTrader5>=5.0.5488"]
+ccxt = ["ccxt>=4.4.0"]
+bybit = ["pybit>=5.7.0"]
+
+# Optional Parquet support for tradetropy.io (read_*/save_* with format='parquet').
+parquet = ["pyarrow>=17.0.0"]
+
+# Optional HDF5 support for tradetropy.io (read_*/save_* with format='hdf5').
+# PyTables links the HDF5 C library and cannot build on some platforms (notably
+# Termux/Android); the base install uses the .npz format instead and does not
+# need this.
+hdf5 = ["tables>=3.11.1"]
+
+# Everything above in one shot (runtime extras only; docs excluded).
+all = [
+    "MetaTrader5>=5.0.5488",
+    "ccxt>=4.4.0",
+    "pybit>=5.7.0",
+    "pyarrow>=17.0.0",
+    "tables>=3.11.1",
+]
+
+# Documentation site toolchain (MkDocs Material + API autodoc).
+docs = [
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.26.0",
+]
+
+# Benchmarking against backtesting.py (benchmarks/bench_vs_backtesting_py.py).
+# Only needed to reproduce the numbers in docs/guide/performance.md.
+bench = ["backtesting>=0.3.3"]
+
+[project.urls]
+Homepage = "https://github.com/michiTrader/tradetropy"
+Documentation = "https://michiTrader.github.io/tradetropy/"
+Repository = "https://github.com/michiTrader/tradetropy"
+
+# Development-only tooling (installed by `uv sync`, not shipped to users).
+# tables/pyarrow are runtime OPTIONAL extras for users, but the dev environment
+# needs them so the full test suite (which exercises the HDF5 and Parquet IO
+# paths) runs under `uv sync`.
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-benchmark>=5.2.3",
+    "tables>=3.11.1",
+    "pyarrow>=17.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.11,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+constraint-dependencies = ["numpy<2.5"]
+
+# The bundled sample datasets in src/tradetropy/datasets/_data/ (*.npz, *.csv)
+# live inside the module root, so the uv build backend includes them in both
+# the sdist and the wheel automatically (only __pycache__/*.pyc are excluded).

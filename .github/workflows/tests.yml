@@ -1,0 +1,26 @@
+name: tests
+
+# Lightweight smoke CI for the public build: verify the package installs and its
+# free-tier public API imports and runs. The full test suite lives in the
+# private source-of-truth repository.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install (base + connector extras; mt5 is Windows-only)
+        run: uv sync --extra ccxt --extra bybit --extra parquet
+
+      - name: Import and run a free-tier backtest
+        run: |
+          uv run python -c "import tradetropy; from tradetropy import BacktestEngine, Strategy; from tradetropy.ta import SMA, VolumeProfile, LargeTrades, FairValueGap, MarketSessions; from tradetropy.datasets import load_btcusd_1m; print('tradetropy public API import OK')"

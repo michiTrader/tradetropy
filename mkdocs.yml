@@ -1,0 +1,99 @@
+site_name: Tradetropy
+site_description: A professional backtesting and live trading framework for algorithmic trading strategies with footprint analysis and market microstructure.
+site_url: https://michiTrader.github.io/tradetropy/
+repo_url: https://github.com/michiTrader/tradetropy
+repo_name: michiTrader/tradetropy
+copyright: Copyright &copy; michiTrader - MIT License
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/favicon.png
+  palette:
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            docstring_section_style: table
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: true
+            show_signature_annotations: true
+            separate_signature: true
+            members_order: source
+            filters: ['!^_']
+            merge_init_into_class: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+  - User guide:
+      - Core concepts: guide/concepts.md
+      - Working with data: guide/data.md
+      - Indicators: guide/indicators.md
+      - Order flow and L2: guide/order-flow.md
+      - Backtesting and optimization: guide/backtesting.md
+      - Live trading: guide/live.md
+      - Replay and paper trading: guide/replay.md
+      - Monte Carlo robustness: guide/robustness.md
+      - Plotting: guide/plotting.md
+      - Performance: guide/performance.md
+  - Examples: examples.md
+  - API reference:
+      - Overview: reference/index.md
+      - Datasets: reference/datasets.md
+      - Data types: reference/data-types.md
+      - Data IO: reference/io.md
+      - Engines: reference/engines.md
+      - Strategy: reference/strategy.md
+      - Indicators: reference/indicators.md
+  - Changelog: changelog.md
+  - Contributing: contributing.md
