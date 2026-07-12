@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="Tradetropy logo" width="320">
+  <img src="docs/assets/logo.png" alt="Tradetropy logo" width="320">
 </p>
 
 # Tradetropy

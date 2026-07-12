@@ -7,7 +7,7 @@ copyright: Copyright &copy; michiTrader - MIT License
 
 theme:
   name: material
-  logo: assets/logo.svg
+  logo: assets/logo.png
   favicon: assets/favicon.png
   palette:
     - media: '(prefers-color-scheme: light)'
