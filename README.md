@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/michiTrader/tradetropy/main/docs/assets/logo.png" alt="Tradetropy logo" width="320">
+  <img src="https://raw.githubusercontent.com/michiTrader/tradetropy/main/docs/assets/logo-wordmark.png" alt="Tradetropy" width="420">
 </p>
 
 # Tradetropy

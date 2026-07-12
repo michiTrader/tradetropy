@@ -6,6 +6,16 @@ at the repository root. Highlights below.
 
 ## [Unreleased]
 
+## [0.2.2]
+
+### Added
+
+- Horizontal wordmark logo used in the README.
+
+### Fixed
+
+- README logo uses an absolute URL so it renders on PyPI as well as GitHub.
+
 ## [0.2.1]
 
 ### Added

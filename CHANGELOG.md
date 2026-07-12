@@ -37,6 +37,16 @@ lives in the tier manifest (see the release tooling).
 
 ## [Unreleased]
 
+## [0.2.2]
+
+### Added
+- Horizontal wordmark logo (`docs/assets/logo-wordmark.png`) used in the
+  README, with a color legible on both light and dark backgrounds.
+
+### Fixed
+- README logo now uses an absolute GitHub URL so it renders correctly on the
+  PyPI project page too (a relative path only worked on GitHub).
+
 ## [0.2.1]
 
 ### Added
