@@ -37,10 +37,24 @@ lives in the tier manifest (see the release tooling).
 
 ## [Unreleased]
 
+## [0.2.1]
+
+### Added
+- `tradetropy.__version__`, resolved via `importlib.metadata` (falls back to
+  `"0.0.0"` when running from a source checkout with no installed package
+  metadata, so it never breaks the import).
+
+## [0.2.0]
+
 ### Added
 - License (MIT)
 - CONTRIBUTING.md
 - GitHub Sponsors goal-based release model
+
+### Changed
+- Renamed the project from `tradear` to `tradetropy` (package, metadata,
+  docs, CI, environment variables `TRADETROPY_SUPPRESS_DISCLAIMER` /
+  `TRADETROPY_DEBUG_WARMUP`).
 
 ## [0.1.1]
 

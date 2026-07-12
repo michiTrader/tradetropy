@@ -6,6 +6,14 @@ at the repository root. Highlights below.
 
 ## [Unreleased]
 
+## [0.2.1]
+
+### Added
+
+- `tradetropy.__version__`, resolved via `importlib.metadata`.
+
+## [0.2.0]
+
 ### Added
 
 - Bundled sample datasets (`tradetropy.datasets`) with typed loaders for candles,
