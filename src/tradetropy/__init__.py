@@ -17,11 +17,20 @@ before.
 from __future__ import annotations
 
 import importlib
+import importlib.metadata
 from typing import TYPE_CHECKING
 
 # ``exceptions`` is tiny (no third-party imports) and is referenced as the
 # submodule ``tradetropy.exceptions`` throughout the codebase, so it stays eager.
 from tradetropy import exceptions
+
+try:
+    __version__ = importlib.metadata.version("tradetropy")
+except importlib.metadata.PackageNotFoundError:
+    # Running from a source checkout without an installed/editable metadata
+    # entry (e.g. a fresh `uv run` before `uv sync`). Never let a version
+    # lookup crash the import of the whole package.
+    __version__ = "0.0.0"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Lazy public-symbol registry:  name -> (submodule, attribute)
@@ -93,6 +102,7 @@ _LAZY: dict[str, tuple[str, str]] = {
 }
 
 __all__ = [
+    "__version__",
     "exceptions",
     "BacktestEngine",
     "PoolBacktestEngine",
