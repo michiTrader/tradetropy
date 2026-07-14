@@ -480,7 +480,33 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
     fig_pl = _build_pl_panel(config, trades_source, theme, all_figs)
 
     # ── Main OHLC panel ─────────────────────────────────────────────────
-    fig_ohlc, x_range = _new_ohlc_fig(config.ohlc_height, config.width, theme, output_backend=config.output_backend)
+    # Force an explicit Range1d on the X axis (same as the live path in
+    # live/document.py::_create_live_ohlc_figure). A DataRange1d (auto-range)
+    # does not reliably drive the OHLC Y autoscale: it does not emit stable
+    # start/end change events on pan/zoom, so _configure_autoscale_ohlc's
+    # callback never fires and the price axis stays frozen at the full-data
+    # range. An explicit Range1d makes pan/zoom write start/end deterministically
+    # (which is exactly why the live chart's autoscale works), so the price axis
+    # follows the visible candles.
+    from bokeh.models import Range1d as _Range1d
+    _ts_col = ohlc_array[:, 0].astype(np.float64)
+    _ts_valid = _ts_col[np.isfinite(_ts_col) & (_ts_col > 0)]
+    if len(_ts_valid) > 0:
+        _iv = interval_ms if interval_ms and interval_ms > 0 else 0
+        _x_pad_l = _iv * 5
+        _x_pad_r = _iv * 10
+        _x_range_init = _Range1d(
+            start=float(_ts_valid[0]) - _x_pad_l,
+            end=float(_ts_valid[-1]) + _x_pad_r,
+        )
+    else:
+        _x_range_init = None
+
+    fig_ohlc, x_range = _new_ohlc_fig(
+        config.ohlc_height, config.width, theme,
+        x_range=_x_range_init,
+        output_backend=config.output_backend,
+    )
     for f in all_figs:
         f.x_range = x_range
 

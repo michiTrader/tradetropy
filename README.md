@@ -1,10 +1,15 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/michiTrader/tradetropy/main/docs/assets/logo-wordmark.png" alt="Tradetropy" width="420">
+  <img src="https://raw.githubusercontent.com/michiTrader/tradetropy/main/docs/assets/logo-badge.png" alt="Tradetropy" height="72">
 </p>
 
 # Tradetropy
 
 [![PyPI](https://img.shields.io/pypi/v/tradetropy)](https://pypi.org/project/tradetropy/)
+[![Python versions](https://img.shields.io/pypi/pyversions/tradetropy)](https://pypi.org/project/tradetropy/)
+[![Downloads](https://static.pepy.tech/badge/tradetropy)](https://pepy.tech/project/tradetropy)
+[![License](https://img.shields.io/github/license/michiTrader/tradetropy)](https://github.com/michiTrader/tradetropy/blob/main/LICENSE)
+[![Tests](https://github.com/michiTrader/tradetropy/actions/workflows/tests.yml/badge.svg)](https://github.com/michiTrader/tradetropy/actions/workflows/tests.yml)
+[![Docs](https://github.com/michiTrader/tradetropy/actions/workflows/docs.yml/badge.svg)](https://github.com/michiTrader/tradetropy/actions/workflows/docs.yml)
 
 A professional backtesting and live trading framework for algorithmic trading
 strategies, with first-class support for footprint analysis and market
@@ -80,6 +85,13 @@ engine = BacktestEngine.by_klines(SmaCross(), data=(load_btcusd_1m(),))
 engine.run()
 print(engine.stats)
 ```
+
+`engine.plot()` renders the full interactive chart (candles, indicators, equity,
+drawdown and a per-trade P&L panel). Static preview of that same chart, from the
+[docs example](https://michiTrader.github.io/tradetropy/examples/) - see the
+**interactive version there** (zoom, pan, hover tooltips):
+
+[![Tradetropy interactive chart](docs/assets/demos/sma_cross/chart.png)](https://michiTrader.github.io/tradetropy/examples/)
 
 More runnable scripts are in [`examples/`](examples/).
 

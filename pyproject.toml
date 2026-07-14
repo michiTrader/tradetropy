@@ -1,6 +1,6 @@
 [project]
 name = "tradetropy"
-version = "0.2.2"
+version = "0.2.3"
 description = "A professional backtesting and live trading framework for algorithmic trading strategies with footprint analysis and market microstructure."
 readme = "README.md"
 license = "MIT"
@@ -51,6 +51,21 @@ all = [
 docs = [
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.26.0",
+]
+
+# Static PNG export for the generated documentation demos
+# (tools/gen_docs_demo.py -> docs/assets/demos/<id>/chart.png). Opt-in: the
+# generator SKIPS the PNG with a warning when this is not installed (the
+# interactive chart.html, stats.txt and snippet.py are still produced), so it
+# is only needed where the static fallback image must be (re)generated - e.g.
+# the docs CI job. Needs a real browser installed (Chrome or Firefox): the
+# generator first tries Bokeh's own driver lookup (a chromedriver/geckodriver
+# binary on PATH), then falls back to a headless Chrome driver resolved by
+# Selenium Manager (bundled with selenium>=4.6) - so just having Chrome
+# installed is enough, no separate chromedriver download required.
+docs-export = [
+    "selenium>=4.15.0",
+    "pillow>=10.0.0",
 ]
 
 # Benchmarking against backtesting.py (benchmarks/bench_vs_backtesting_py.py).

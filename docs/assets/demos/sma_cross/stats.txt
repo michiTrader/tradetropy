@@ -1,0 +1,29 @@
+Start                     2020-01-02 00:00:00+00:00
+End                       2021-03-11 00:00:00+00:00
+Duration                          434 days 00:00:00
+Exposure Time [%]                           46.7742
+Equity Final [$]                            10237.2
+Equity Peak [$]                             10244.0
+Return [%]                                    2.372
+Return (Ann.) [%]                            1.9925
+Volatility (Ann.) [%]                        1.9296
+Sharpe Ratio                                 1.0336
+Sortino Ratio                                 1.649
+Calmar Ratio                                  1.448
+Max. Drawdown [%]                           -1.3761
+Avg. Drawdown [%]                            -0.264
+Max. Drawdown Duration             90 days 00:00:00
+Avg. Drawdown Duration      14 days 18:56:50.526000
+# Trades                                          4
+# Trades Long                                     4
+# Trades Short                                    0
+Win Rate [%]                                   75.0
+Best Trade [%]                              12.8583
+Worst Trade [%]                             -5.1689
+Avg. Trade [%]                               4.7942
+Max. Trade Duration                76 days 00:00:00
+Avg. Trade Duration                50 days 18:00:00
+Profit Factor                                4.2129
+Expectancy [%]                               4.7942
+SQN                                           1.284
+Total Commissions [$]                           0.0

@@ -98,50 +98,71 @@ def render_footprint(
 
 
 def render_pl_bars(fig, source, theme: dict, interval_ms: int = 0) -> None:
+    """
+    Render the per-trade P&L panel as connected markers (backtesting.py style).
+
+    Each closed trade draws a segment from its entry to its exit (in
+    entry_ts/exit_ts x pnl_pct y-space, entry pinned to 0 so the segment shows
+    the trade's outcome path) and a circle marker AT the exit, sized by the
+    magnitude of its P&L (|pnl|) and colored win/loss. This replaces the
+    previous quad-bar rendering with the entry->exit + exit-circle convention
+    used by backtesting.py's trade markers.
+    """
     from bokeh.models import HoverTool, NumeralTickFormatter, Span
 
     pnl_pct      = np.asarray(source.data.get("pnl_pct",      []), dtype=np.float64)
+    pnl_arr      = np.asarray(source.data.get("pnl",           []), dtype=np.float64)
     is_win       = source.data.get("is_win",       [])
     entry_ts     = source.data.get("entry_ts",     [])
-    duration_ms  = np.asarray(source.data.get("duration_ms",  []), dtype=np.float64)
+    exit_ts      = source.data.get("exit_ts",       [])
     n = len(entry_ts)
     if n == 0:
         return
-
-    tops    = np.where(pnl_pct >= 0, pnl_pct, 0.0)
-    bottoms = np.where(pnl_pct <  0, pnl_pct, 0.0)
-    source.data["_pl_top"]    = tops
-    source.data["_pl_bottom"] = bottoms
 
     win_color  = theme["trade_win"]
     loss_color = theme["trade_loss"]
     fill_colors = [win_color if w == "1" else loss_color for w in is_win]
 
-    max_abs = float(np.nanmax(np.abs(pnl_pct))) if n > 0 else 1.0
-    if max_abs == 0:
-        max_abs = 1.0
+    # Marker size scales with |pnl| (magnitude of money won/lost), the same
+    # convention backtesting.py uses for its trade circles: bigger circle,
+    # bigger trade outcome. Guards a degenerate all-zero-pnl series so trades
+    # stay visible with a floor size instead of collapsing to 0px.
+    abs_pnl = np.abs(pnl_arr)
+    max_abs_pnl = float(np.nanmax(abs_pnl)) if n > 0 else 0.0
+    if max_abs_pnl <= 0:
+        marker_sizes = np.full(n, 10.0)
+    else:
+        marker_sizes = 6.0 + 24.0 * (abs_pnl / max_abs_pnl)
+        marker_sizes = np.nan_to_num(marker_sizes, nan=6.0)
 
-    fill_alphas = [
-        float(np.clip(0.35 + 0.60 * abs(p) / max_abs, 0.35, 0.95))
-        for p in pnl_pct
-    ]
+    source.data["_pl_marker_size"] = marker_sizes
+    source.data["_pl_fill_color"]  = fill_colors
+    source.data["_pl_entry_y"]     = np.zeros(n, dtype=np.float64)
+    source.data["_pl_exit_y"]      = pnl_pct
+    source.data["_pl_seg_x0"]      = np.array(entry_ts, dtype="datetime64[ms]")
+    source.data["_pl_seg_x1"]      = np.array(exit_ts,  dtype="datetime64[ms]")
 
-    source.data["_pl_fill_color"] = fill_colors
-    source.data["_pl_fill_alpha"] = fill_alphas
-
-    source.data["_pl_left"]   = np.array(entry_ts, dtype="datetime64[ms]")
-    source.data["_pl_right"]  = np.array(source.data["exit_ts"], dtype="datetime64[ms]")
-
-    bars = fig.quad(
-        left="_pl_left",
-        right="_pl_right",
-        top="_pl_top",
-        bottom="_pl_bottom",
+    # Entry -> exit connecting segment (thin, same win/loss color as the
+    # marker), drawn first so the circle sits on top of its own line.
+    fig.segment(
+        x0="_pl_seg_x0", y0="_pl_entry_y",
+        x1="_pl_seg_x1", y1="_pl_exit_y",
         source=source,
-        fill_color="_pl_fill_color",
-        fill_alpha="_pl_fill_alpha",
         line_color="_pl_fill_color",
-        line_alpha=0.0,
+        line_width=1.5,
+        line_alpha=0.6,
+    )
+
+    markers = fig.scatter(
+        x="_pl_seg_x1", y="_pl_exit_y",
+        source=source,
+        marker="circle",
+        size="_pl_marker_size",
+        fill_color="_pl_fill_color",
+        line_color="_pl_fill_color",
+        fill_alpha=0.75,
+        line_alpha=0.9,
+        line_width=1.0,
     )
 
     fig.add_layout(Span(
@@ -163,18 +184,22 @@ def render_pl_bars(fig, source, theme: dict, interval_ms: int = 0) -> None:
             ("P. Sal.",  "@exit_price{0,0.00}"),
             ("PnL $",    "@pnl{+0,0.00}"),
             ("PnL %",    "@trade_label"),
+            ("Size",     "@size_signed{+0,0.00}"),
         ],
         formatters={"@entry_ts": "datetime", "@exit_ts": "datetime"},
         mode="mouse",
-        renderers=[bars],
+        renderers=[markers],
     ))
 
     fig.yaxis.axis_label = "PnL %"
     fig.yaxis.formatter  = NumeralTickFormatter(format="0.0")
 
+    max_abs = float(np.nanmax(np.abs(pnl_pct))) if n > 0 else 1.0
+    if max_abs == 0:
+        max_abs = 1.0
     pad = max_abs * 0.15
-    fig.y_range.start = float(np.nanmin(bottoms)) - pad
-    fig.y_range.end   = float(np.nanmax(tops))    + pad
+    fig.y_range.start = float(np.nanmin(np.minimum(pnl_pct, 0.0))) - pad
+    fig.y_range.end   = float(np.nanmax(np.maximum(pnl_pct, 0.0))) + pad
 
 
 def render_volume_profile(fig, source, interval_ms: int = 0) -> None:

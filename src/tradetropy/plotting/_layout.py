@@ -90,7 +90,25 @@ def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0,
     """
     from bokeh.models import CustomJS
 
-    ylock = _make_ylock()
+    # The ylock was meant to let a manual Y zoom/pan (box_zoom) persist by
+    # suspending the autoscale until Reset. It is disabled here (in BOTH
+    # backtest and live/replay) because it is fundamentally racy: BokehJS
+    # propagates range-change callbacks ASYNCHRONOUSLY, so the autoscale's own
+    # y_range write reaches ylock_watch AFTER the callback has reset the
+    # `scaling` guard to false. That latches locked=true on the very first
+    # wheel/pan/tick, after which every autoscale call returns early and the Y
+    # axis freezes:
+    #   - backtest: candles look flattened on the next pan (nothing re-runs the
+    #     autoscale, so the lock never clears without Reset);
+    #   - live/replay: the view keeps following the candle on X but the Y axis
+    #     stops repositioning (the follow data-trigger also respects the lock).
+    # With ylock left as None, the `typeof ylock === "undefined"` guards in
+    # autoscale_ohlc.js / autoscale_ohlc_live.js skip all lock/scaling logic, so
+    # the autoscale runs unconditionally on every x-range (and, in live-follow,
+    # data) change and always reframes Y to the visible candles. Tradeoff: a
+    # manual Y box-zoom no longer persists across a later pan / next tick -
+    # acceptable, and what "autoscale just works" implies for both charts.
+    ylock = None
     hm_sources = list(heatmap_sources) if heatmap_sources else []
 
     if fp_source_bid is not None:
@@ -102,7 +120,6 @@ def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0,
             pad_factor=0.05,
             fp_source_bid=fp_source_bid,
             y_ticker=None,   # injected in _configure_fp_yaxis
-            ylock=ylock,
             hm_sources=hm_sources,
         )
     else:
@@ -114,20 +131,26 @@ def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0,
             mode="ohlc",
             pad_factor=0.05,
             fp_tick_size=fp_tick_size,
-            ylock=ylock,
             hm_sources=hm_sources,
         )
+    if ylock is not None:
+        args["ylock"] = ylock
 
     cb = CustomJS(args=dict(args), code=body)
     fig.x_range.js_on_change("start", cb)
     fig.x_range.js_on_change("end", cb)
 
-    # Suspend the autoscale as soon as the user zooms/pans the Y axis by hand;
-    # the ResetTool re-enables it.
-    _wire_ylock(fig, ylock)
+    if ylock is not None:
+        # Live only: suspend the autoscale on a manual Y gesture; Reset re-enables.
+        _wire_ylock(fig, ylock)
 
     if follow_state is None:
-        # Backtest: only autoscale on pan/zoom.
+        # Backtest: the OHLC x_range is forced to an explicit Range1d in
+        # plotting.py::plot (a DataRange1d does not emit reliable start/end
+        # change events, so the callback would never fire). With a Range1d the
+        # js_on_change("start"/"end") wiring above fires deterministically on
+        # every pan/zoom and, with no ylock, always reframes Y to the visible
+        # candles.
         return None
 
     # Live: add data-change trigger, gated by the follow state.

@@ -8,6 +8,10 @@ Write a strategy once and run it unchanged across **backtest**, **live** and
 **replay** - the engine differences are a transport detail behind the same
 `Strategy` API.
 
+[Get started](getting-started/installation.md){ .md-button .md-button--primary }
+[PyPI](https://pypi.org/project/tradetropy/){ .md-button }
+[GitHub](https://github.com/michiTrader/tradetropy){ .md-button }
+
 ## Features
 
 - **Backtesting engine** - high-performance backtesting over candles or ticks
@@ -38,33 +42,29 @@ plotting and data IO. Broker integrations and Parquet are optional extras - see
 ## A first backtest
 
 Every loader in `tradetropy.datasets` returns ready-to-use data, so you can run a
-strategy without downloading anything:
+strategy without downloading anything. The **Strategy** tab below is a complete,
+copy-paste-runnable backtest; the **Results** tab is its output; and the chart
+underneath is generated from that very run - scroll to zoom, drag to pan.
 
-```python
-from tradetropy import Strategy, BacktestEngine
-from tradetropy.ta import SMA
-from tradetropy.datasets import load_btcusd_1m
+=== "Strategy"
 
+    ```python
+    --8<-- "assets/demos/sma_cross/snippet.py"
+    ```
 
-class SmaCross(Strategy):
-    def init(self):
-        self.btc = self.subscribe_ohlc('BTCUSD', '1m', window_size=200)
-        self.fast = self.add_indicator(self.btc.close, SMA(10))
-        self.slow = self.add_indicator(self.btc.close, SMA(30))
+=== "Results"
 
-    def on_data(self):
-        if self.fast[-1] > self.slow[-1]:
-            if not self.sesh.positions('BTCUSD'):
-                self.sesh.buy('BTCUSD', volume=1)
-        else:
-            for pos in self.sesh.positions('BTCUSD'):
-                self.sesh.position_close(pos.ticket)
+    ```text
+    --8<-- "assets/demos/sma_cross/stats.txt"
+    ```
 
+<iframe src="assets/demos/sma_cross/chart.html"
+        title="Tradetropy - SMA crossover interactive chart"
+        loading="lazy"
+        style="width: 100%; height: 640px; border: 0; margin: 1rem 0;">
+</iframe>
 
-bt = BacktestEngine.by_klines(SmaCross(), data=(load_btcusd_1m(),))
-bt.run()
-print(bt.stats)
-```
+See more in the [Examples](examples.md).
 
 ## Where to go next
 

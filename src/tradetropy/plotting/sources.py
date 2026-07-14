@@ -158,6 +158,12 @@ def build_trades_source(trades_df: pd.DataFrame, interval_ms: int = 0, align_to_
 
     trade_idx = np.arange(len(tc), dtype=np.float64)
 
+    # Signed size for the P&L hover: positive for long, negative for short, so
+    # the tooltip alone tells direction without a separate field (mirrors
+    # backtesting.py's convention for its trade markers).
+    direction_arr = tc["direction"].to_numpy()
+    size_signed = np.where(direction_arr == "short", -np.abs(sizes_arr), np.abs(sizes_arr))
+
     return ColumnDataSource(dict(
         entry_ts=entry_ts,
         exit_ts=exit_ts,
@@ -166,7 +172,8 @@ def build_trades_source(trades_df: pd.DataFrame, interval_ms: int = 0, align_to_
         pnl=pnl_net_arr,
         pnl_pct=pnl_pct,
         size=sizes_arr,
-        direction=tc["direction"].to_numpy(),
+        size_signed=size_signed,
+        direction=direction_arr,
         is_win=is_win,
         duration_ms=duration_ms_arr,
         trade_label=trade_label,

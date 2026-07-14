@@ -6,6 +6,23 @@ at the repository root. Highlights below.
 
 ## [Unreleased]
 
+## [0.2.3]
+
+### Added
+
+- Interactive documentation demo embedded on the docs landing page and the
+  Examples page, generated from a single canonical snippet (source, stats and
+  chart can never drift from each other).
+- README static chart preview linking to the live interactive chart.
+- Backtesting.py-style P&L panel (sized circle markers, entry-to-exit segment,
+  signed size in the hover tooltip), consistent between backtest and live.
+- New badge-style logo; README badges (Python versions, downloads, license,
+  CI status) and docs landing page download buttons.
+
+### Fixed
+
+- `bt.plot()` Y-axis autoscale on pan/zoom in backtest, live and replay.
+
 ## [0.2.2]
 
 ### Added
