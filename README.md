@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/michiTrader/tradetropy/main/docs/assets/logo-badge.png" alt="Tradetropy" height="72">
+  <img src="https://raw.githubusercontent.com/michiTrader/tradetropy/main/docs/assets/logo-badge.png" alt="Tradetropy" height="88">
 </p>
 
 # Tradetropy
@@ -81,12 +81,12 @@ class SmaCross(Strategy):
                 self.sesh.position_close(pos.ticket)
 
 
-engine = BacktestEngine.by_klines(SmaCross(), data=(load_btcusd_1m(),))
-engine.run()
-print(engine.stats)
+bt = BacktestEngine.by_klines(SmaCross(), data=(load_btcusd_1m(),))
+bt.run()
+print(bt.stats)
 ```
 
-`engine.plot()` renders the full interactive chart (candles, indicators, equity,
+`bt.plot()` renders the full interactive chart (candles, indicators, equity,
 drawdown and a per-trade P&L panel). Static preview of that same chart, from the
 [docs example](https://michiTrader.github.io/tradetropy/examples/) - see the
 **interactive version there** (zoom, pan, hover tooltips):

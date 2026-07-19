@@ -11,6 +11,31 @@ from ._util import _AUTOSCALE_JS
 _JS_DIR = pathlib.Path(__file__).parent / "js"
 
 
+def _price_tag_icon() -> str:
+    """
+    Build the toolbar icon (a small price/tag glyph) for the price-tag toggle.
+
+    Returned as a base64 ``data:`` URI so it embeds in static HTML with no
+    external asset and renders with a fixed neutral stroke (an ``<img>`` data
+    URI has no CSS context, so ``currentColor`` would not resolve).
+    """
+    import base64
+
+    svg = (
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' "
+        "fill='none' stroke='#888888' stroke-width='2' "
+        "stroke-linecap='round' stroke-linejoin='round'>"
+        "<path d='M3 12 L14 12 L20 12'/>"
+        "<rect x='13' y='8' width='8' height='8' rx='1'/>"
+        "</svg>"
+    )
+    b64 = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    return "data:image/svg+xml;base64," + b64
+
+
+_PRICE_TAG_ICON = _price_tag_icon()
+
+
 def _make_ylock():
     """
     Create the shared Y-lock state for a figure's autoscale.
@@ -58,7 +83,7 @@ def _wire_ylock(fig, ylock, y_range=None) -> None:
     fig.js_on_event("reset", reset)
 
 
-def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0, fp_source_bid=None, follow_state=None, heatmap_sources=None):
+def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0, fp_source_bid=None, follow_state=None, heatmap_sources=None, indicator_sources=None):
     """
     Configures the Y-axis autoscale for the OHLC panel.
 
@@ -82,6 +107,12 @@ def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0,
 
     Returns the list of CustomJS [cb_xrange, cb_source] so that
     _configure_fp_yaxis can inject the footprint y_ticker into both.
+
+    ``indicator_sources`` (optional) are the ts/value ColumnDataSources of
+    overlay indicator series (line/scatter/step/bar, e.g. ZigZag) that opt into
+    the price autoscale (``exclude_from_autoscale=False``). They are scanned by
+    the same JS so the Y range frames the indicator even in zones where candles
+    were trimmed by ``max_candles``.
 
     If fp_source_bid is passed (live mode with footprint), the JS reads
     tick_size directly from the source at runtime (cell_h[0]) instead of the
@@ -110,6 +141,7 @@ def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0,
     # acceptable, and what "autoscale just works" implies for both charts.
     ylock = None
     hm_sources = list(heatmap_sources) if heatmap_sources else []
+    ind_sources = list(indicator_sources) if indicator_sources else []
 
     if fp_source_bid is not None:
         body = (_JS_DIR / "autoscale_ohlc_live.js").read_text()
@@ -121,6 +153,7 @@ def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0,
             fp_source_bid=fp_source_bid,
             y_ticker=None,   # injected in _configure_fp_yaxis
             hm_sources=hm_sources,
+            ind_sources=ind_sources,
         )
     else:
         body = _AUTOSCALE_JS
@@ -132,6 +165,7 @@ def _configure_autoscale_ohlc(fig, source, theme: dict, fp_tick_size: float = 0,
             pad_factor=0.05,
             fp_tick_size=fp_tick_size,
             hm_sources=hm_sources,
+            ind_sources=ind_sources,
         )
     if ylock is not None:
         args["ylock"] = ylock
@@ -391,7 +425,41 @@ def _configure_crosshair(
     figs: list, theme: dict, tick_size: float = 0.0, show_price_tag: bool = True,
     ohlc_fig=None,
 ) -> None:
-    from bokeh.models import CrosshairTool, Span, CustomJS, Label
+    """
+    Wire the shared crosshair and the optional price tag across all panels.
+
+    Vertical (time) crosshair
+    --------------------------
+    Drawn by the NATIVE ``CrosshairTool`` on the crosshair overlay layer, not by
+    a ``Span`` + ``mousemove`` ``CustomJS``. A single ``Span`` object (the
+    vertical line) is SHARED by the tool on every panel, so the crosshair is
+    linked in time across the stacked panels for free. Because the native tool
+    paints on its own overlay layer, moving the mouse never repaints the glyph
+    canvas - which is what made the old ``CustomJS``-driven line drag on charts
+    with many candles/indicators. Each panel additionally gets its own
+    horizontal line (its Y is panel-specific).
+
+    Price tag
+    ---------
+    Optional (``show_price_tag``) floating price box that follows the crosshair
+    on the OHLC panel, snapped to the tick grid. It stays a data-coordinate
+    ``Label`` (a center renderer, so it does not thrash the layout), but its
+    ``mousemove`` handler only writes to the model when the SNAPPED price
+    actually changes - i.e. once per tick boundary crossed, not on every
+    sub-pixel move - so it barely touches the paint path. A toolbar action
+    ("Toggle price tag") flips it on/off at runtime; ``show_price_tag`` is the
+    initial state.
+
+    Args:
+        figs (list): All panels sharing the time axis.
+        theme (dict): Plot theme (crosshair / price-tag colors).
+        tick_size (float): Price tick; the tag snaps to its multiples.
+        show_price_tag (bool): Initial visibility of the price tag.
+        ohlc_fig: The price panel the tag is anchored to (its Y is price).
+    """
+    from bokeh.models import (
+        CrosshairTool, Span, CustomJS, Label, ColumnDataSource, CustomAction,
+    )
 
     color = theme["crosshair"]
     tag_bg = theme.get("price_tag_bg", color)
@@ -406,33 +474,36 @@ def _configure_crosshair(
     else:
         decs = 2
 
-    # The price label must ALWAYS be anchored to the OHLC panel (its `y` lives
-    # in price coordinates). The caller passes fig_ohlc explicitly; without it
-    # we fall back to the first panel with a Y axis, which could be
-    # equity/drawdown and would leave the label invisible over the price axis.
-    vlines = []
-    price_label = None
+    # Shared vertical (time) line: one Span object handed to every panel's
+    # native CrosshairTool links the crosshair across panels with no CustomJS.
+    vspan = Span(
+        location=0,
+        dimension="height",
+        line_color=color,
+        line_width=0.8,
+        line_dash="dashed",
+        line_alpha=0.6,
+    )
 
     for fig in figs:
         if not hasattr(fig, "add_tools"):
             continue
-        fig.add_tools(CrosshairTool(
-            dimensions="width",
-            line_color=color,
-            line_width=0.8,
-            line_alpha=0.6,
-        ))
-        v = Span(
+        # Per-panel horizontal line (own Y) + the SHARED vertical line. The
+        # native tool paints both on the overlay layer, so mouse movement never
+        # repaints the data glyphs.
+        hspan = Span(
             location=0,
-            dimension="height",
+            dimension="width",
             line_color=color,
             line_width=0.8,
-            line_dash="dashed",
             line_alpha=0.6,
         )
-        fig.add_layout(v)
-        vlines.append(v)
+        fig.add_tools(CrosshairTool(overlay=(hspan, vspan)))
 
+    # The price label must ALWAYS be anchored to the OHLC panel (its `y` lives
+    # in price coordinates). The caller passes fig_ohlc explicitly; without it
+    # we fall back to the first panel with a Y axis, which could be
+    # equity/drawdown and would leave the label invisible over the price axis.
     if show_price_tag and ohlc_fig is None:
         ohlc_fig = next(
             (f for f in figs
@@ -440,74 +511,92 @@ def _configure_crosshair(
             None,
         )
 
-    if show_price_tag and ohlc_fig is not None:
-        # The label is drawn INSIDE the data frame (not on the panel axis).
-        # Anchoring it to the right panel caused Bokeh to recalculate the panel
-        # width on mouse enter/leave, annoyingly rearranging the chart. As a
-        # center renderer it does not touch the layout.
-        # x in data coordinates = x_range.end (right edge of the frame);
-        # text_align=right keeps the label tucked inside the axis.
-        price_label = Label(
-            x=0, y=0,
-            x_units="data",
-            y_units="data",
-            text="",
-            text_font_size="11px",
-            text_font="monospace",
-            text_color=tag_text,
-            text_align="right",
-            text_baseline="middle",
-            background_fill_color=tag_bg,
-            background_fill_alpha=1.0,
-            border_line_color=tag_bg,
-            border_line_alpha=1.0,
-            border_line_width=1,
-            x_offset=-2,
-            y_offset=0,
-            level="overlay",
-        )
-        ohlc_fig.add_layout(price_label)
+    if not (show_price_tag and ohlc_fig is not None):
+        return
 
-    if price_label is not None:
-        # The vertical lines update from any panel (shared x axis).
-        vline_args = {f"v{i}": v for i, v in enumerate(vlines)}
-        vline_code = "\n".join(f"v{i}.location = cb_obj.x;" for i in range(len(vlines)))
-        vline_cb = CustomJS(args=vline_args, code=vline_code)
-        for fig in figs:
-            fig.js_on_event("mousemove", vline_cb)
+    # The label is drawn INSIDE the data frame (not on the panel axis).
+    # Anchoring it to the right panel caused Bokeh to recalculate the panel
+    # width on mouse enter/leave, annoyingly rearranging the chart. As a
+    # center renderer it does not touch the layout.
+    # x in data coordinates = x_range.end (right edge of the frame);
+    # text_align=right keeps the label tucked inside the axis.
+    price_label = Label(
+        x=0, y=0,
+        x_units="data",
+        y_units="data",
+        text="",
+        text_font_size="11px",
+        text_font="monospace",
+        text_color=tag_text,
+        text_align="right",
+        text_baseline="middle",
+        background_fill_color=tag_bg,
+        background_fill_alpha=1.0,
+        border_line_color=tag_bg,
+        border_line_alpha=1.0,
+        border_line_width=1,
+        x_offset=-2,
+        y_offset=0,
+        level="overlay",
+        visible=True,
+    )
+    ohlc_fig.add_layout(price_label)
 
-        # The price label only updates from the OHLC figure: its `y` belongs
-        # to the price coordinate system, not to the subpanels.
-        # If tick_size is available, the price is snapped to the nearest tick multiple.
-        price_cb = CustomJS(
-            args={"label": price_label, "ohlc": ohlc_fig,
-                  "tick": float(tick_size or 0.0), "decs": decs},
+    # Runtime on/off state shared between the mousemove handler and the toolbar
+    # toggle. Starts enabled (show_price_tag gated entry above).
+    tag_state = ColumnDataSource(data=dict(on=[True]))
+
+    # The price label only updates from the OHLC figure: its `y` belongs to the
+    # price coordinate system, not to the subpanels. The value is snapped to the
+    # tick grid and the model is only written when that snapped value changes,
+    # so a mouse move within one tick's pixels triggers no repaint at all.
+    price_cb = CustomJS(
+        args={"label": price_label, "ohlc": ohlc_fig, "state": tag_state,
+              "tick": float(tick_size or 0.0), "decs": decs},
+        code=(
+            "if (!state.data['on'][0]) {"
+            "  if (label.visible) { label.visible = false; }"
+            "  return;"
+            "}"
+            "let y = cb_obj.y;"
+            "if (!isFinite(y)) {"
+            "  if (label.visible) { label.visible = false; }"
+            "  return;"
+            "}"
+            "if (tick > 0) { y = Math.round(y / tick) * tick; }"
+            "const xr = ohlc.x_range.end;"
+            "if (label.visible && y === label.y && xr === label.x) { return; }"
+            "label.x = xr;"
+            "label.y = y;"
+            "label.text = y.toFixed(decs);"
+            "label.visible = true;"
+        ),
+    )
+    ohlc_fig.js_on_event("mousemove", price_cb)
+
+    hide_cb = CustomJS(
+        args={"label": price_label},
+        code="if (label.visible) { label.visible = false; }",
+    )
+    ohlc_fig.js_on_event("mouseleave", hide_cb)
+
+    # Toolbar toggle (works in static HTML too - pure client-side callback).
+    # Flips the shared state and hides the label immediately when turned off.
+    toggle = CustomAction(
+        description="Toggle price tag",
+        icon=_PRICE_TAG_ICON,
+        callback=CustomJS(
+            args=dict(state=tag_state, label=price_label),
             code=(
-                "let y = cb_obj.y;"
-                "if (isFinite(y)) {"
-                "  if (tick > 0) { y = Math.round(y / tick) * tick; }"
-                "  label.x = ohlc.x_range.end;"
-                "  label.y = y;"
-                "  label.text = y.toFixed(decs);"
-                "  label.visible = true;"
-                "} else {"
-                "  label.visible = false;"
-                "}"
+                "export default ({state, label}) => {\n"
+                "    const on = !state.data['on'][0];\n"
+                "    state.data['on'][0] = on;\n"
+                "    if (!on) { label.visible = false; }\n"
+                "}\n"
             ),
-        )
-        ohlc_fig.js_on_event("mousemove", price_cb)
-
-        hide_cb = CustomJS(
-            args={"label": price_label},
-            code="label.visible = false;",
-        )
-        ohlc_fig.js_on_event("mouseleave", hide_cb)
-    else:
-        args = {f"v{i}": v for i, v in enumerate(vlines)}
-        code = "\n".join(f"v{i}.location = cb_obj.x;" for i in range(len(vlines)))
-        callback = CustomJS(args=args, code=code)
-        for fig in figs:
-            fig.js_on_event("mousemove", callback)
+        ),
+    )
+    ohlc_fig.add_tools(toggle)
 
 
 def _configure_margins(figs: list) -> None:

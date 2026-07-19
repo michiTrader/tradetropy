@@ -201,6 +201,64 @@ def _prepare_equity_series(
             return equity_curve / initial_balance - 1.0, 0.0
 
 
+def _downsample_minmax(ts: np.ndarray, vals: np.ndarray, max_points: int = 4000):
+    """
+    Reduce a long (ts, vals) curve for plotting while preserving its envelope.
+
+    A tick-driven backtest records equity once per tick, so the curve can hold
+    hundreds of thousands of points even when the chart shows only a few hundred
+    candles. Such a curve is invisible at screen resolution (a 1200 px panel
+    cannot show more than ~1200 distinct x positions) yet it makes the line
+    heavy AND, worse, makes the O(N) autoscale CustomJS rescan every point on
+    every pan/zoom frame - the real cause of the sluggish interaction.
+
+    The curve is split into ``max_points // 2`` equal index buckets and only the
+    per-bucket MIN and MAX (in time order) are kept, plus the first and last
+    point. This keeps the visible shape and the true extremes - so the equity
+    autoscale still frames the panel correctly - at a fraction of the points.
+    The reduction is for DRAWING only; stats and the peak/trough markers are
+    computed from the full curve upstream.
+
+    Args:
+        ts: Timestamps (any dtype indexable in parallel with ``vals``).
+        vals (np.ndarray): The curve values.
+        max_points (int): Target upper bound on the returned point count.
+
+    Returns:
+        tuple: ``(ts, vals)`` unchanged if already small enough, else the
+        downsampled pair.
+    """
+    n = len(vals)
+    if n <= max_points or max_points < 4:
+        return ts, vals
+
+    n_buckets = max(1, max_points // 2)
+    edges = np.linspace(0, n, n_buckets + 1).astype(np.int64)
+    keep = [0, n - 1]
+    for b in range(n_buckets):
+        lo, hi = int(edges[b]), int(edges[b + 1])
+        if hi <= lo:
+            continue
+        seg = vals[lo:hi]
+        finite = np.isfinite(seg)
+        if not finite.any():
+            keep.append(lo)
+            continue
+        seg_idx = np.nonzero(finite)[0]
+        seg_vals = seg[seg_idx]
+        imin = lo + int(seg_idx[np.argmin(seg_vals)])
+        imax = lo + int(seg_idx[np.argmax(seg_vals)])
+        if imin <= imax:
+            keep.append(imin)
+            keep.append(imax)
+        else:
+            keep.append(imax)
+            keep.append(imin)
+
+    idx = np.unique(np.asarray(keep, dtype=np.int64))
+    return ts[idx], vals[idx]
+
+
 def build_drawdown_source(equity_curve: pd.Series):
     from bokeh.models import ColumnDataSource
     from tradetropy.stats import drawdown_series, calc_daily_equity
@@ -332,6 +390,8 @@ def build_trailing_dd_source(
     ts = result.index.values.astype("datetime64[ms]")
     vals = result.to_numpy(dtype=np.float64)
 
+    # Same per-tick length as the equity curve -> decimate for drawing.
+    ts, vals = _downsample_minmax(ts, vals)
     return ColumnDataSource(dict(ts=ts, trailing_dd=vals))
 
 

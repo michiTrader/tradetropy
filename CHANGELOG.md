@@ -37,6 +37,25 @@ lives in the tier manifest (see the release tooling).
 
 ## [Unreleased]
 
+## [0.2.4]
+
+### Changed
+- Regenerated the badge logo (`docs/assets/logo-badge.png`) at higher
+  resolution: a larger icon and more right-side padding on the pill so the
+  "Tradetropy" wordmark no longer crowds the rounded edge. The wordmark is
+  reproduced pixel-faithfully from the original typeface (alpha matte),
+  reproducible via the new `tools/gen_logo.py`. Bumped the README badge
+  display height accordingly.
+- Plotting: large tick-backtest equity and trailing-drawdown curves are now
+  min/max decimated for drawing, and overlay indicators participate in the
+  price-panel autoscale (with zoom-aware point-cloud decimation) - noticeably
+  smoother pan/zoom, while stats and markers are still computed from the full
+  data.
+
+### Fixed
+- `bt.plot()` no longer fails with an ImportError on the equity panel: the
+  equity-curve decimation helper it relies on is now present.
+
 ## [0.2.3]
 
 ### Added

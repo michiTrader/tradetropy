@@ -23,6 +23,60 @@ from tradetropy.ta.draw import HBars, HLines, Labels, Points, Rects, Segments
 
 _FALLBACK_COLOR = "#888888"
 
+# Level-of-detail decimation for large point clouds (scatter). Clouds larger
+# than the threshold keep their full data in a backing source; only a capped,
+# uniformly-spaced sample of the visible window is drawn (refined on zoom by
+# ``decimate_points.js``). Below the threshold the cloud draws in full with no
+# callback overhead, so zoom-in always shows every point.
+_POINTS_LOD_THRESHOLD = 6000
+_POINTS_LOD_MAX_VISIBLE = 4000
+
+
+def _decimate_indices(n: int, max_visible: int) -> np.ndarray:
+    """Uniformly-spaced row indices to keep, preserving order (Python mirror of
+    the JS subsample)."""
+    if n <= max_visible:
+        return np.arange(n, dtype=np.int64)
+    step = n / max_visible
+    return (np.arange(max_visible, dtype=np.float64) * step).astype(np.int64)
+
+
+def _decimate_point_data(data: dict, max_visible: int) -> dict:
+    """
+    Build the initial drawn view for a point cloud by uniformly subsampling
+    every parallel column to at most ``max_visible`` rows.
+
+    The x_range CustomJS refines this on the first pan/zoom; this only seeds a
+    representative view so the glyph shows before any interaction. Handles both
+    NumPy arrays (y/size/alpha/x) and plain lists (color/fill_color strings).
+    """
+    n = len(data.get("x", []))
+    idx = _decimate_indices(n, max_visible)
+    out: dict = {}
+    for key, col in data.items():
+        if isinstance(col, np.ndarray):
+            out[key] = col[idx]
+        else:
+            out[key] = [col[i] for i in idx]
+    return out
+
+
+def _attach_point_lod(x_range, full_src, view_src, max_visible: int) -> None:
+    """Wire the decimate_points.js callback so the drawn view refines on zoom."""
+    import pathlib
+    from bokeh.models import CustomJS
+
+    js_dir = pathlib.Path(__file__).resolve().parent.parent / "js"
+    body = (js_dir / "decimate_points.js").read_text()
+    cb = CustomJS(
+        args=dict(full=full_src, view=view_src, x_range=x_range,
+                  max_visible=max_visible),
+        code=body,
+    )
+    x_range.js_on_change("start", cb)
+    x_range.js_on_change("end", cb)
+
+
 
 def _tok(value, theme: dict | None):
     """Resolve a single color value, expanding 'theme:<key>' tokens."""
@@ -66,6 +120,7 @@ def render_tool_groups(
     label_sink: list | None = None,
     lazy_x_range=None,
     lazy_zoom_range: int | None = None,
+    enable_point_lod: bool = False,
 ) -> dict:
     """
     Render (or update) tool primitive groups onto ``fig``.
@@ -114,9 +169,23 @@ def render_tool_groups(
                 existing.data = data
             else:
                 from bokeh.models import ColumnDataSource
-                src = ColumnDataSource(data)
-                obj = _create_glyph(fig, kind, src, plist[0], legend_label, theme)
-                registry[key] = src
+                # Large point clouds: keep the full data in a backing source and
+                # draw only a capped, zoom-refined sample (static paths only;
+                # the live path bounds points by the max_candles rollover).
+                if (enable_point_lod and kind is Points and lazy_x_range is not None
+                        and len(data.get("x", [])) > _POINTS_LOD_THRESHOLD):
+                    full_src = ColumnDataSource(data)
+                    view_src = ColumnDataSource(
+                        _decimate_point_data(data, _POINTS_LOD_MAX_VISIBLE)
+                    )
+                    obj = _create_glyph(fig, kind, view_src, plist[0], legend_label, theme)
+                    _attach_point_lod(lazy_x_range, full_src, view_src,
+                                      _POINTS_LOD_MAX_VISIBLE)
+                    registry[key] = full_src
+                else:
+                    src = ColumnDataSource(data)
+                    obj = _create_glyph(fig, kind, src, plist[0], legend_label, theme)
+                    registry[key] = src
                 if obj is not None:
                     (new_labels if kind is Labels else new_glyphs).append(obj)
 

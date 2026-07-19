@@ -121,14 +121,19 @@ def _render_overlay_indicators(fig, indicators: list, interval_ms: int, theme: d
     Render every overlay indicator onto the price figure.
 
     Returns:
-        list: ColumnDataSources of overlay draw-primitive groups that opt into
-        the price autoscale (``exclude_from_autoscale=False``, e.g. the
-        Heatmap's liquidity cells). The caller feeds these to the OHLC autoscale
-        so the visible geometry is never clipped.
+        tuple: ``(heatmap_sources, series_sources)``.
+        - ``heatmap_sources``: ColumnDataSources of overlay draw-primitive
+          groups that opt into the price autoscale (``exclude_from_autoscale=
+          False``, e.g. the Heatmap's liquidity cells).
+        - ``series_sources``: ts/value ColumnDataSources of overlay indicator
+          series (line/scatter/step/bar, e.g. ZigZag) that opt into the price
+          autoscale. The caller feeds both to the OHLC autoscale so the visible
+          geometry/series is never clipped.
     """
     from tradetropy.plotting.render._tools import render_tool_groups
 
     autoscale_sources: list = []
+    series_sources: list = []
     for meta in indicators:
         if not meta.overlay:
             continue
@@ -140,6 +145,7 @@ def _render_overlay_indicators(fig, indicators: list, interval_ms: int, theme: d
                 fig, meta._draw_primitives, theme=theme, interval_ms=interval_ms,
                 show_legend=meta.show_legend, label_sink=label_sink,
                 lazy_x_range=lazy_x_range, lazy_zoom_range=lazy_zoom_range,
+                enable_point_lod=True,
             )
             # Overlays that opt into the price autoscale (e.g. the Heatmap)
             # contribute their quad sources so the Y range covers their cells.
@@ -156,10 +162,15 @@ def _render_overlay_indicators(fig, indicators: list, interval_ms: int, theme: d
         if not _is_geometric_renderer(meta.renderer):
             srcs = build_indicator_source(meta)
             render_indicator(fig, srcs, meta, interval_ms=interval_ms)
+            # Feed the series into the price autoscale unless it opted out. The
+            # default (exclude_from_autoscale=False) includes overlays like SMA/
+            # BB/ZigZag so the Y range never clips them.
+            if not getattr(meta, "exclude_from_autoscale", False):
+                series_sources.extend(srcs)
             if meta.reference_lines:
                 render_reference_lines(fig, meta)
 
-    return autoscale_sources
+    return autoscale_sources, series_sources
 
 
 _GEOMETRIC_RENDERERS = {"rect", "span", "label", "arrow", "segment", "none"}
@@ -208,6 +219,7 @@ def _render_tool_snapshots(fig, bt, interval_ms: int, theme: dict,
         fig, groups, theme=theme, interval_ms=interval_ms,
         label_sink=label_sink, lazy_x_range=lazy_x_range,
         lazy_zoom_range=lazy_zoom_range,
+        enable_point_lod=True,
     )
 
 
@@ -237,7 +249,14 @@ def _build_equity_panel(config, theme, stats, all_figs):
     max_dd_ts = eq_plot.index[max_dd_i]
     max_dd_val = float(vals[max_dd_i])
     from bokeh.models import ColumnDataSource
-    eq_source = ColumnDataSource(dict(ts=ts, equity=vals))
+    from tradetropy.plotting.sources import _downsample_minmax
+    # Draw a decimated curve: a per-tick equity curve can be ~500k points, which
+    # is invisible at screen resolution but makes both the line and the O(N)
+    # autoscale (which rescans every point on each pan/zoom frame) heavy. The
+    # markers above are already computed from the full curve, so this only
+    # affects the drawn line and keeps the envelope/extremes intact.
+    _ts_ds, _vals_ds = _downsample_minmax(ts, vals)
+    eq_source = ColumnDataSource(dict(ts=_ts_ds, equity=_vals_ds))
 
     trailing_source = None
     if config.max_trailing_dd is not None:
@@ -312,6 +331,7 @@ def _build_indicator_panels(indicators: list, config: PlotConfig, x_range, theme
                 fig_ind, meta._draw_primitives, theme=theme, interval_ms=interval_ms,
                 show_legend=meta.show_legend, label_sink=label_sink,
                 lazy_x_range=x_range, lazy_zoom_range=lazy_zoom_range,
+                enable_point_lod=True,
             )
             # Autoscale a geometric panel from its primitive sources (quads /
             # segments), since it has no value series to drive the standard hook.
@@ -540,7 +560,7 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
     lazy_label_entries: list = []
     _lazy_zoom = config.labels_zoom_range
 
-    _heatmap_autoscale_sources = _render_overlay_indicators(
+    _heatmap_autoscale_sources, _series_autoscale_sources = _render_overlay_indicators(
         fig_ohlc, indicators, interval_ms, theme,
         label_sink=lazy_label_entries, lazy_x_range=x_range,
         lazy_zoom_range=_lazy_zoom,
@@ -607,6 +627,7 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
     _configure_autoscale_ohlc(
         fig_ohlc, source_ohlc, theme, fp_tick_size,
         heatmap_sources=_heatmap_autoscale_sources,
+        indicator_sources=_series_autoscale_sources,
     )
     if fp_tick_size > 0:
         _configure_fp_yaxis(fig_ohlc, fp_tick_size)

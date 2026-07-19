@@ -46,6 +46,27 @@ if (typeof hm_sources !== "undefined" && hm_sources) {
     }
 }
 
+// Include the visible overlay-indicator series (line/scatter/step/bar, e.g.
+// ZigZag) so the price autoscale frames them too - especially in zones where
+// candles were trimmed by max_candles but the indicator still extends there.
+// Each source carries parallel ts/value columns; NaN values are skipped by the
+// comparisons naturally.
+if (typeof ind_sources !== "undefined" && ind_sources) {
+    for (const is of ind_sources) {
+        const idat = is.data;
+        const ix = idat['ts'], iy = idat['value'];
+        if (!ix || !iy) continue;
+        for (let i = 0; i < ix.length; i++) {
+            const t = ix[i] instanceof Date ? ix[i].getTime() : Number(ix[i]);
+            if (t >= s && t <= e) {
+                const v = iy[i];
+                if (v < lo) lo = v;
+                if (v > hi) hi = v;
+            }
+        }
+    }
+}
+
 if (lo < Infinity && hi > -Infinity) {
     const fp_half_tick = fp_tick_size / 2;
     lo -= fp_half_tick;

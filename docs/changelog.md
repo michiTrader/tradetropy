@@ -6,6 +6,16 @@ at the repository root. Highlights below.
 
 ## [Unreleased]
 
+## [0.2.4]
+
+### Changed
+- Regenerated the badge logo at higher resolution: a larger icon and more
+  right-side padding on the pill so the "Tradetropy" wordmark no longer crowds
+  the rounded edge (reproducible via `tools/gen_logo.py`).
+- Plotting: large tick-backtest equity/drawdown curves are min/max decimated for
+  drawing and overlay indicators join the price-panel autoscale for smoother
+  pan/zoom; also fixes an ImportError in `bt.plot()`.
+
 ## [0.2.3]
 
 ### Added
