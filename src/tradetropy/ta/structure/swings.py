@@ -54,6 +54,7 @@ class SwingHL(Indicator):
 
     name     = "swinghl"
     category = "annotation"
+    source_cols = ("high", "low", "ts")
 
     output_names    = ["swing_high", "swing_low"]
     ts_band_indices = [2, 3]
@@ -276,6 +277,7 @@ class EqualHL(Indicator):
 
     name     = "eqhl"
     category = "annotation"
+    source_cols = ("high", "low", "ts")
 
     output_names    = ["level", "type"]
     ts_band_indices = []

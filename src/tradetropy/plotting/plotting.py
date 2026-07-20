@@ -69,6 +69,9 @@ from tradetropy.plotting._util import (
 )
 from tradetropy.plotting.sources import (
     build_ohlc_source, 
+    build_ohlc_lod_sources,
+    attach_candle_lod,
+    _CANDLE_LOD_THRESHOLD,
     _build_footprint_cols,
     build_indicator_source,
     build_trades_source,
@@ -484,6 +487,15 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
         for _k, _v in _fp_cols.items():
             source_ohlc.data[_k] = _v
 
+    # Candle level-of-detail: for large datasets keep the full candles in a
+    # backing source and draw a bucket-aggregated view that refines on zoom
+    # (decimate_candles.js). Disabled with footprint (a zoomed-in detail view
+    # whose fp_lazy/legend callbacks own the candle width).
+    _full_ohlc = None
+    _candle_lod = (not config.plot_footprint) and len(ohlc_array) > _CANDLE_LOD_THRESHOLD
+    if _candle_lod:
+        _full_ohlc, source_ohlc = build_ohlc_lod_sources(ohlc_array, interval_ms)
+
     trades_source = None
     align_trades = config.align_trades_to_candle
     if config.plot_trades and stats is not None and not stats.trades.empty:
@@ -532,6 +544,11 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
 
     if fig_pl is not None:
         fig_pl.x_range = x_range
+
+    # Register candle LOD BEFORE the autoscale so the autoscale scans the freshly
+    # decimated view on every pan/zoom.
+    if _candle_lod and _full_ohlc is not None:
+        attach_candle_lod(x_range, _full_ohlc, source_ohlc)
 
     # Autoscale equity now that x_range is available
     if config.equity_mode != "none" and stats is not None:

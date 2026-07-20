@@ -43,7 +43,7 @@ engine.run() does all the real work:
 
 from __future__ import annotations
 
-from typing import Tuple
+from typing import Tuple, Literal
 
 from tradetropy.models.strategy import FeedType, Strategy
 from tradetropy.session.base import SeshSimulatorBase
@@ -98,7 +98,7 @@ class BacktestEngine(_StoreBuilderMixin):
         self,
         strategy: Strategy,
         sesh: SeshSimulatorBase,
-        _feed_type: FeedType = "tick",
+        _feed_type: Literal["tick", "kline"] = "tick",
     ):
         if not isinstance(sesh, SeshSimulatorBase):
             raise ConfigError(
@@ -128,6 +128,14 @@ class BacktestEngine(_StoreBuilderMixin):
         # is guarded by test_stats_fast_parity.py. Default False keeps the full
         # pandas Stats object for normal run()/plot().
         self._fast_stats: bool = False
+
+        # Controls the "Stats: insufficient sample" UserWarning emitted by
+        # compute_stats() when the sample is too small to trust the
+        # annualized/trade-distribution metrics. The gating itself (those
+        # metrics zeroed to NaN, Stats["_low_sample"] = True) always applies
+        # regardless of this flag; only the warning message is optional. run()
+        # exposes this as stats_warn=. Default True keeps existing behavior.
+        self._stats_warn: bool = True
 
         # Typed data - stored in by_ticks/by_klines, used in run()
         self._tick_inputs: tuple[TickData, ...] = ()
@@ -362,7 +370,8 @@ class BacktestEngine(_StoreBuilderMixin):
     # ==========================================================================
 
     def run(self, params: dict = None, verbose: bool = False,
-            save_log: "bool | None" = None) -> "BacktestEngine":
+            save_log: "bool | None" = None,
+            stats_warn: bool = True) -> "BacktestEngine":
         '''
         Execute the complete backtest.
 
@@ -372,6 +381,13 @@ class BacktestEngine(_StoreBuilderMixin):
             params (dict): Optional dict to override parameters before running
             verbose (bool): Enable strategy logger output to console
             save_log (bool): Write log to file. None uses engine default
+            stats_warn (bool): Emit the "Stats: insufficient sample" UserWarning
+                              when the sample (duration/closed trades) is too
+                              small to trust the annualized/trade-distribution
+                              metrics. The gating that zeroes those metrics to
+                              NaN and sets stats["_low_sample"] always applies;
+                              set stats_warn=False to silence just the warning
+                              for quick exploratory runs on small datasets.
 
         Returns:
             BacktestEngine: Self for method chaining
@@ -387,6 +403,8 @@ class BacktestEngine(_StoreBuilderMixin):
         '''
         if save_log is None:
             save_log = self._DEFAULT_SAVE_LOG
+
+        self._stats_warn = stats_warn
 
         if params is not None:
             self.strategy.update_params(params)
@@ -490,6 +508,7 @@ class BacktestEngine(_StoreBuilderMixin):
         drawdown_height: int = 80,
         indicator_height: int = 100,
         footprint_zoom_range: int = 40,
+        labels_zoom_range: int = 100,
         max_candles: int = 10_000,
         equity_mode: str = "return",
         equity_unit: str = "percent",
@@ -498,6 +517,8 @@ class BacktestEngine(_StoreBuilderMixin):
         resample_timeframe: str | None = None,
         align_trades_to_candle: bool = True,
         max_trailing_dd: float | None = None,
+        output_backend: str = "webgl",
+        show_price_tag: bool = False,
     ) -> None:
         '''
         Generate interactive backtest chart.
@@ -522,6 +543,7 @@ class BacktestEngine(_StoreBuilderMixin):
             drawdown_height (int): Drawdown panel height
             indicator_height (int): Default height for indicator panels
             footprint_zoom_range (int): Max candles to display footprint
+            labels_zoom_range (int): Max candles in view to display text labels
             max_candles (int): Candle render limit (performance)
             equity_mode (str): 'none' | 'balance' | 'return'
             equity_unit (str): 'currency' | 'percent'
@@ -531,6 +553,13 @@ class BacktestEngine(_StoreBuilderMixin):
                 (e.g. '1m', '5m', '1h', '1d').
             align_trades_to_candle (bool): Align trade timestamps to candle open
             max_trailing_dd (float): Maximum trailing drawdown (e.g. 0.2 = 20%)
+            output_backend (str): 'canvas' | 'webgl' | 'svg'. Default 'webgl'
+                for smooth pan/zoom/crosshair interaction; use 'canvas' for
+                deterministic headless PNG export and 'svg' for vector export.
+            show_price_tag (bool): Show the floating price box that follows
+                the crosshair snapped to the Y-axis (TradingView style).
+                Default False; toggleable at runtime from the toolbar when
+                enabled.
 
         Example:
             bt.plot()
@@ -553,6 +582,7 @@ class BacktestEngine(_StoreBuilderMixin):
             drawdown_height=drawdown_height,
             indicator_height=indicator_height,
             footprint_zoom_range=footprint_zoom_range,
+            labels_zoom_range=labels_zoom_range,
             max_candles=max_candles,
             equity_mode=equity_mode,
             equity_unit=equity_unit,
@@ -561,6 +591,8 @@ class BacktestEngine(_StoreBuilderMixin):
             resample_timeframe=resample_timeframe,
             align_trades_to_candle=align_trades_to_candle,
             max_trailing_dd=max_trailing_dd,
+            output_backend=output_backend,
+            show_price_tag=show_price_tag,
         )
         self._plot_config = kwargs
         from tradetropy.plotting import plot as _plot, PlotConfig

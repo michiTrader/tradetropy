@@ -92,6 +92,7 @@ class ATR(Indicator):
 
     name = "atr"
     category = "volatility"
+    source_cols = ("high", "low", "close")
 
     def __init__(self, length: int = 14):
         self.length = length

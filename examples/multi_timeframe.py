@@ -50,6 +50,6 @@ if __name__ == '__main__':
 
     # A single base series feeds every subscribed timeframe. The engine reports
     # how many candles each resampled timeframe yields off the 1m source.
-    engine = BacktestEngine.by_klines(MultiTimeframe(), data=(btc_1m,))
-    engine.run()
-    print(engine.stats)
+    bt = BacktestEngine.by_klines(MultiTimeframe(), data=(btc_1m,))
+    bt.run()
+    print(bt.stats)

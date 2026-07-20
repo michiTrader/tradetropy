@@ -22,6 +22,6 @@ class SmaCross(Strategy):
                 self.sesh.position_close(pos.ticket)
 
 
-engine = BacktestEngine.by_klines(SmaCross(), data=(load_goog_1d(),))
-engine.run()
-print(engine.stats)
+bt = BacktestEngine.by_klines(SmaCross(), data=(load_goog_1d(),))
+bt.run()
+print(bt.stats)

@@ -18,3 +18,5 @@ the base classes for writing your own.
         - TickVolumeProfile
         - RollingVolumeProfile
         - LargeTrades
+        - CandlePatterns
+        - ManualMarks

@@ -112,13 +112,13 @@ class DeepFlow(Strategy):
             self.sesh.buy('ADAUSDT', volume=1)
 
 
-engine = ReplayEngine.by_ticks(
+bt = ReplayEngine.by_ticks(
     DeepFlow(),
     data=(load_adausd_ticks(),),
     book=load_adausd_book(),               # <- the order book enters here
     speed=20.0,
 )
-engine.run()                               # opens the interactive replay chart
+bt.run()                                    # opens the interactive replay chart
 ```
 
 The runnable version is [`examples/orderflow_l2.py`](../examples.md).

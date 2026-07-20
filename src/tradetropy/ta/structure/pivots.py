@@ -43,6 +43,7 @@ class PivotHighLow(Indicator):
     """
     name            = "pivot"
     category        = "structure"
+    source_cols     = ("high", "low", "ts")
     output_names    = ["high", "low"]
     ts_band_indices = [2, 3]
     ts_output_names = ["ts_high", "ts_low"]
@@ -131,6 +132,7 @@ class ConfirmedPivot(Indicator, PivotIndicatorMixin):
 
     name            = "cpivot"
     category        = "structure"
+    source_cols     = ("high", "low", "ts")
     ts_band_indices = [2, 3]
     ts_output_names = ["ts_high", "ts_low"]
     output_names    = ["high", "low"]

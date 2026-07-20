@@ -320,7 +320,7 @@ class _StoreBuilderMixin:
 
                 if multi_band:
                     K = indicator.n_outputs
-                    # region XXX debug
+                    # Guard: declared n_outputs must match calculate()'s bands.
                     n_real_bands = result.shape[0] if result.ndim > 1 else 1
                     if K != n_real_bands:
                         raise ConfigError(
@@ -328,7 +328,6 @@ class _StoreBuilderMixin:
                             f"calculate returned {n_real_bands} rows. "
                             f"Check that n_outputs matches the calculate output shape."
                         )
-                    #endregion 
                     col_names = []
                     src_idxs  = (
                         [_OHLC_COL[f._col_name] for f in sources]

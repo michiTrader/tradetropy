@@ -479,12 +479,12 @@ def _execute_kline_loop(self, data: dict, verbose: bool = True):
         _interval_ms_por_sym = {
             ki.symbol: ki.interval_ms for ki in self._kline_inputs
         }
-    _todos_mismo_intervalo = (
+    _all_same_interval = (
         len(set(_interval_ms_por_sym.values())) <= 1
         and len(set(lengths.values())) == 1
     )
 
-    if _todos_mismo_intervalo:
+    if _all_same_interval:
         M = min(lengths.values())
         _timeline = None
         _sym_idx_at = None
@@ -548,7 +548,7 @@ def _execute_kline_loop(self, data: dict, verbose: bool = True):
 
         _current_ts_ms = int(
             _primary_mat[idx, 0]
-            if _todos_mismo_intervalo
+            if _all_same_interval
             else _timeline[idx]
         )
 
@@ -556,10 +556,10 @@ def _execute_kline_loop(self, data: dict, verbose: bool = True):
             for sym, mat in _broker_mats.items():
                 bar_idx = (
                     idx
-                    if _todos_mismo_intervalo
+                    if _all_same_interval
                     else int(_sym_idx_at[sym][idx])
                 )
-                if not _todos_mismo_intervalo and bar_idx < 0:
+                if not _all_same_interval and bar_idx < 0:
                     continue
                 row = mat[bar_idx]
                 # Pass epoch-ms only; the broker builds the datetime lazily
@@ -662,6 +662,7 @@ def _build_stats(self) -> "Stats | None":
             initial_balance=broker.initial_balance,
             strategy=self.strategy,
             freq=freq,
+            warn=getattr(self, "_stats_warn", True),
         )
     except Exception as e:
         import traceback

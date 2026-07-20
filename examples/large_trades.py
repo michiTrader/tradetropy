@@ -34,6 +34,6 @@ class WhaleWatch(Strategy):
 
 
 if __name__ == '__main__':
-    engine = BacktestEngine.by_ticks(WhaleWatch(), data=(load_mesu26_ticks(),))
-    engine.run()
-    print(engine.stats)
+    bt = BacktestEngine.by_ticks(WhaleWatch(), data=(load_mesu26_ticks(),))
+    bt.run()
+    print(bt.stats)

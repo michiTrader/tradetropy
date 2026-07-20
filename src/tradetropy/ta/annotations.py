@@ -151,6 +151,7 @@ class FairValueGap(Indicator):
 
     name     = "fvg"
     category = "annotation"
+    source_cols = ("ts", "open", "high", "low", "close", "volume")
 
     # The 4 price bands are accessible to the user
     output_names    = ["bull_top", "bull_bot", "bear_top", "bear_bot"]
@@ -644,6 +645,7 @@ class MarketSessions(Indicator):
 
     name     = "sessions"
     category = "annotation"
+    source_cols = ("ts",)
     # output_names built in __init__ - empty list as class placeholder
     output_names: list = []
     ts_band_indices = []
@@ -856,6 +858,7 @@ class SessionLevels(Indicator):
 
     name     = "session_levels"
     category = "structure"
+    source_cols = ("ts", "open", "high", "low", "close")
     output_names: list = []
     ts_band_indices: list = []
 
@@ -1164,6 +1167,7 @@ class KillZones(Indicator):
 
     name     = "kill_zones"
     category = "structure"
+    source_cols = ("ts", "open", "high", "low", "close")
     output_names: list = []
     ts_band_indices: list = []
 
@@ -1453,6 +1457,7 @@ class OrderBlock(Indicator):
 
     name     = "ob"
     category = "annotation"
+    source_cols = ("ts", "open", "high", "low", "close", "volume")
 
     output_names    = ["bull_top", "bull_bot", "bear_top", "bear_bot"]
     ts_band_indices = [4, 5, 6, 7]
@@ -1691,6 +1696,7 @@ class PivotPoints(Indicator):
 
     name = 'pivots'
     category = 'structure'
+    source_cols = ('ts', 'open', 'high', 'low', 'close')
     output_names: list = []
     ts_band_indices: list = []
 
@@ -1855,3 +1861,414 @@ class PivotPoints(Indicator):
                     out[k, i] = prev_levels[lvl]
 
         return out
+
+
+# =====
+# CandlePatterns (statistical candlestick pattern annotation)
+# =====
+_CANDLE_BULL_COLOR = "#0ECB81"
+_CANDLE_BEAR_COLOR = "#F6465D"
+_CANDLE_NEUTRAL_COLOR = "#B0B0B0"
+
+
+class CandlePatterns(Indicator):
+    """
+    Statistical candlestick pattern detector (annotation) with adaptive
+    percentile thresholds, a z-score context filter and causal efficacy
+    tracking.
+
+    Unlike a "detect anything" pattern list, the classification is relative to
+    the recent distribution (a hammer needs a lower wick beyond the ``wick``
+    percentile of the last ``window`` bars and a small body) and, optionally,
+    to the price context (a hammer only counts when price is stretched down,
+    z-score of close vs its rolling mean <= ``-zscore_thresh``). All detection
+    is pure and causal (see ``tradetropy.ta._candlestick``), so it is identical
+    in backtest, live and replay.
+
+    It draws the pattern name on each candle (below bullish, above bearish) and
+    exposes a public query API through the handle ``add_indicator`` returns, so
+    a strategy reads the current pattern - and each pattern's empirical hit-rate
+    - causally from ``on_data()``.
+
+    Usage:
+        def init(self):
+            self.btc = self.subscribe_ohlc("BTCUSDT", "1h", window_size=300)
+            # Proxy-direct (source_cols resolves ts+OHLC), or CandlePatterns.refs(self.btc).
+            self.candles = self.add_indicator(self.btc, CandlePatterns())
+
+        def on_data(self):
+            if self.candles.last_pattern() == "Bullish Engulfing":
+                # Only act if it has historically worked on THIS symbol/timeframe.
+                eff = self.candles.efficacy("Bullish Engulfing")
+                if eff["sample_size"] >= 20 and eff["hit_rate"] > 0.55:
+                    self.sesh.buy("BTCUSDT", volume=1)
+
+    Output bands (data, read in on_data via the handle):
+        code[-1]      -> numeric pattern code of the current bar (0 = none)
+        direction[-1] -> +1 bullish / -1 bearish / 0 neutral
+
+    Query API (through the add_indicator() handle):
+        last_pattern()          -> name of the current bar's pattern ('none')
+        pattern_at(i)           -> name at offset i (e.g. -1 last, -2 previous)
+        patterns(n=None)        -> list of names (last n, or all in the window)
+        is_bullish() / is_bearish() -> bias of the current bar
+        name_of(code)           -> label for a numeric code
+        efficacy(pattern)       -> {'hit_rate', 'sample_size', 'wins', 'name'}
+                                   for one pattern (name or code), causal
+        efficacy_all()          -> {name: {...}} for every pattern seen so far
+
+    Args:
+        window (int): Trailing window for the adaptive size percentiles.
+        doji_body/small_body/long_body/wick/marubozu_wick (str|float): Threshold
+            specs (absolute, 'pXX' quantile or 'Nx' median multiple) - see
+            ``detect_candle_patterns``.
+        doji_frac (float): Max body/range for a doji.
+        zscore_len (int): Rolling window for the context z-score.
+        zscore_thresh (float): |z| beyond which price counts as stretched.
+        context_filter (bool): Gate hammer/hanging-man/inverted-hammer/shooting
+            -star by context (default True).
+        horizon (int): Bars ahead used by the efficacy hit-rate.
+        show_stats (bool): Append each pattern's causal hit-rate to its drawn
+            label (default False; the full dashboard is ``efficacy_all()``).
+        bull_color/bear_color/neutral_color (str): Label colors by direction.
+        label_offset (float): Label distance from the wick, in percent of price.
+    """
+
+    name = "candles"
+    category = "annotation"
+    source_cols = ("ts", "open", "high", "low", "close")
+    output_names = ["code", "direction"]
+    exposes_query_api = True
+
+    def __init__(
+        self,
+        *,
+        window: int = 100,
+        doji_body="p10",
+        small_body="p50",
+        long_body="p60",
+        wick="p80",
+        marubozu_wick="p20",
+        doji_frac: float = 0.1,
+        zscore_len: int = 50,
+        zscore_thresh: float = 0.5,
+        context_filter: bool = True,
+        horizon: int = 10,
+        show_stats: bool = False,
+        bull_color: str = _CANDLE_BULL_COLOR,
+        bear_color: str = _CANDLE_BEAR_COLOR,
+        neutral_color: str = _CANDLE_NEUTRAL_COLOR,
+        label_offset: float = 0.01,
+    ):
+        self.window = int(window)
+        self.doji_body = doji_body
+        self.small_body = small_body
+        self.long_body = long_body
+        self.wick = wick
+        self.marubozu_wick = marubozu_wick
+        self.doji_frac = float(doji_frac)
+        self.zscore_len = int(zscore_len)
+        self.zscore_thresh = float(zscore_thresh)
+        self.context_filter = bool(context_filter)
+        self.horizon = int(horizon)
+        self.show_stats = bool(show_stats)
+        self._bull_color = bull_color
+        self._bear_color = bear_color
+        self._neutral_color = neutral_color
+        self._label_offset = float(label_offset) / 100.0
+
+        # Full-series arrays stored by calculate() for draw().
+        self._ts = None
+        self._open = self._high = self._low = self._close = None
+        self._codes = None
+        self._directions = None
+        # Source proxy for causal on-demand recomputation (set by add_indicator).
+        self._src_proxy = None
+
+        self.plot_config = IndicatorPlotConfig(
+            overlay=True,
+            exclude_from_autoscale=True,
+            renderer="none",
+            plot=True,
+            name="Candles",
+        )
+
+    @property
+    def n_outputs(self) -> int:
+        return 2
+
+    @property
+    def min_periods(self) -> int:
+        return 1
+
+    def display_name(self) -> str:
+        return "CandlePatterns"
+
+    def col_name(self, symbol: str, col_source: str = "") -> str:
+        return f"candles_{symbol}"
+
+    def _detect_kwargs(self) -> dict:
+        return dict(
+            window=self.window,
+            doji_body=self.doji_body,
+            small_body=self.small_body,
+            long_body=self.long_body,
+            wick=self.wick,
+            marubozu_wick=self.marubozu_wick,
+            doji_frac=self.doji_frac,
+            zscore_len=self.zscore_len,
+            zscore_thresh=self.zscore_thresh,
+            context_filter=self.context_filter,
+        )
+
+    def calculate(self, source: np.ndarray) -> np.ndarray:
+        """
+        Args:
+            source: [N x 5] - ts(0), open(1), high(2), low(3), close(4)
+
+        Returns:
+            [2 x N] - row 0 = pattern code (0 = none), row 1 = direction bias.
+        """
+        from tradetropy.ta._candlestick import detect_candle_patterns
+
+        n = len(source)
+        if n == 0 or source.ndim != 2 or source.shape[1] < 5:
+            return np.zeros((2, max(n, 1)), dtype=np.float64)
+
+        ts = source[:, 0].astype(np.float64)
+        open_ = source[:, 1].astype(np.float64)
+        high = source[:, 2].astype(np.float64)
+        low = source[:, 3].astype(np.float64)
+        close = source[:, 4].astype(np.float64)
+
+        codes, directions = detect_candle_patterns(
+            open_, high, low, close, **self._detect_kwargs()
+        )
+
+        self._ts = ts
+        self._open, self._high, self._low, self._close = open_, high, low, close
+        self._codes = codes
+        self._directions = directions
+
+        out = np.zeros((2, n), dtype=np.float64)
+        out[0] = codes.astype(np.float64)
+        out[1] = directions
+        return out
+
+    # -----
+    # Public query API (reached via the add_indicator() handle)
+    # -----
+    def set_query_source(self, proxy) -> None:
+        """Wire the source OHLC proxy for causal on-demand recomputation."""
+        self._src_proxy = proxy
+
+    def _causal_ohlc(self):
+        """
+        Return the current causal OHLC window (open, high, low, close).
+
+        Prefers the live source proxy (its window is bounded to bars up to the
+        current cursor, so a query in on_data() never sees the future); falls
+        back to the arrays stored by the last calculate().
+        """
+        proxy = self._src_proxy
+        if proxy is not None:
+            try:
+                o = np.asarray(proxy.open[:], dtype=np.float64)
+                h = np.asarray(proxy.high[:], dtype=np.float64)
+                l = np.asarray(proxy.low[:], dtype=np.float64)
+                c = np.asarray(proxy.close[:], dtype=np.float64)
+                if len(c) > 0:
+                    return o, h, l, c
+            except Exception:
+                pass
+        if self._close is not None:
+            return self._open, self._high, self._low, self._close
+        empty = np.array([], dtype=np.float64)
+        return empty, empty, empty, empty
+
+    def _causal_codes(self):
+        """Recompute (codes, directions, close) over the current causal window."""
+        from tradetropy.ta._candlestick import detect_candle_patterns
+
+        o, h, l, c = self._causal_ohlc()
+        if len(c) == 0:
+            empty = np.array([], dtype=np.float64)
+            return np.array([], dtype=np.int64), empty, empty
+        codes, directions = detect_candle_patterns(o, h, l, c, **self._detect_kwargs())
+        return codes, directions, c
+
+    def last_pattern(self) -> str:
+        """Name of the current (last) bar's pattern ('none' if there is none)."""
+        from tradetropy.ta._candlestick import pattern_name
+
+        codes, _, _ = self._causal_codes()
+        if len(codes) == 0:
+            return "none"
+        return pattern_name(int(codes[-1]))
+
+    def pattern_at(self, i: int) -> str:
+        """
+        Name of the pattern at offset ``i`` within the causal window.
+
+        Args:
+            i (int): Index (e.g. -1 current bar, -2 previous). Out of range
+                returns 'none'.
+        """
+        from tradetropy.ta._candlestick import pattern_name
+
+        codes, _, _ = self._causal_codes()
+        n = len(codes)
+        if n == 0 or i < -n or i >= n:
+            return "none"
+        return pattern_name(int(codes[i]))
+
+    def patterns(self, n: "int | None" = None) -> list:
+        """
+        List of pattern names over the causal window.
+
+        Args:
+            n (int | None): Return only the last ``n`` bars (None -> all).
+        """
+        from tradetropy.ta._candlestick import pattern_name
+
+        codes, _, _ = self._causal_codes()
+        names = [pattern_name(int(x)) for x in codes]
+        return names[-n:] if n else names
+
+    def is_bullish(self) -> bool:
+        """True if the current bar's pattern has a bullish bias."""
+        _, directions, _ = self._causal_codes()
+        return len(directions) > 0 and directions[-1] > 0
+
+    def is_bearish(self) -> bool:
+        """True if the current bar's pattern has a bearish bias."""
+        _, directions, _ = self._causal_codes()
+        return len(directions) > 0 and directions[-1] < 0
+
+    def name_of(self, code) -> str:
+        """Human-readable label for a numeric pattern code."""
+        from tradetropy.ta._candlestick import pattern_name
+
+        return pattern_name(code)
+
+    def _resolve_code(self, pattern) -> "int | None":
+        """Map a pattern name or code to its numeric code."""
+        from tradetropy.ta._candlestick import PATTERN_LABELS
+
+        if isinstance(pattern, str):
+            for code, label in PATTERN_LABELS.items():
+                if label.lower() == pattern.strip().lower():
+                    return code
+            return None
+        try:
+            return int(pattern)
+        except (TypeError, ValueError):
+            return None
+
+    def efficacy(self, pattern) -> dict:
+        """
+        Causal empirical hit-rate for one pattern (name or code).
+
+        Only signals resolved by the current bar (``s + horizon`` bars elapsed)
+        are counted, so the statistic never uses future information.
+
+        Returns:
+            dict: {'hit_rate', 'sample_size', 'wins', 'name'}. An unseen pattern
+                yields sample_size 0 and hit_rate NaN.
+        """
+        from tradetropy.ta._candlestick import evaluate_efficacy, pattern_name
+
+        code = self._resolve_code(pattern)
+        codes, directions, close = self._causal_codes()
+        stats = evaluate_efficacy(codes, directions, close, horizon=self.horizon)
+        if code is not None and code in stats:
+            return stats[code]
+        return {
+            "hit_rate": float("nan"),
+            "sample_size": 0,
+            "wins": 0,
+            "name": pattern_name(code) if code is not None else str(pattern),
+        }
+
+    def efficacy_all(self) -> dict:
+        """
+        Causal empirical hit-rate for every pattern seen so far, keyed by name.
+
+        Returns:
+            dict[str, dict]: name -> {'hit_rate', 'sample_size', 'wins', 'code'}.
+        """
+        from tradetropy.ta._candlestick import evaluate_efficacy
+
+        codes, directions, close = self._causal_codes()
+        stats = evaluate_efficacy(codes, directions, close, horizon=self.horizon)
+        out = {}
+        for code, entry in stats.items():
+            out[entry["name"]] = {
+                "hit_rate": entry["hit_rate"],
+                "sample_size": entry["sample_size"],
+                "wins": entry["wins"],
+                "code": code,
+            }
+        return out
+
+    # -----
+    # Drawing
+    # -----
+    def draw(self, cfg=None, *, interval_ms=None) -> list:
+        """
+        Emit the pattern name over each detected candle: below bullish candles,
+        above bearish/neutral candles. With ``show_stats`` the pattern's causal
+        hit-rate (as of the last bar) is appended to the label.
+        """
+        from tradetropy.ta.draw import Labels
+        from tradetropy.ta._candlestick import (
+            pattern_name, PATTERN_DIRECTION, evaluate_efficacy,
+        )
+
+        if self._codes is None or len(self._codes) == 0:
+            return []
+
+        eff = {}
+        if self.show_stats:
+            stats = evaluate_efficacy(
+                self._codes, self._directions, self._close, horizon=self.horizon
+            )
+            eff = {c: e["hit_rate"] for c, e in stats.items()}
+
+        bull_x, bull_y, bull_txt = [], [], []
+        top_x, top_y, top_txt, top_color = [], [], [], []
+        for i in range(len(self._codes)):
+            code = int(self._codes[i])
+            if code == 0:
+                continue
+            label = pattern_name(code)
+            if self.show_stats and code in eff and not np.isnan(eff[code]):
+                label = f"{label} {eff[code]:.0%}"
+            direction = PATTERN_DIRECTION.get(code, 0.0)
+            ts_i = int(self._ts[i])
+            if direction > 0:
+                bull_x.append(ts_i)
+                bull_y.append(float(self._low[i]) * (1.0 - self._label_offset))
+                bull_txt.append(label)
+            else:
+                top_x.append(ts_i)
+                top_y.append(float(self._high[i]) * (1.0 + self._label_offset))
+                top_txt.append(label)
+                top_color.append(
+                    self._bear_color if direction < 0 else self._neutral_color
+                )
+
+        prims = []
+        if bull_x:
+            prims.append(Labels(
+                x=bull_x, y=bull_y, text=bull_txt, color=self._bull_color,
+                font_size="8pt", x_offset=0, y_offset=0,
+                text_align="center", text_baseline="top",
+            ))
+        if top_x:
+            prims.append(Labels(
+                x=top_x, y=top_y, text=top_txt, color=top_color,
+                font_size="8pt", x_offset=0, y_offset=0,
+                text_align="center", text_baseline="bottom",
+            ))
+        return prims

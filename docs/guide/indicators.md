@@ -75,6 +75,62 @@ if self.kz.london_open_active[-1] == 0.0:           # kill zone already closed
 Both accept the same predefined-string-or-custom-dict window format as
 `MarketSessions` (`{"name": "silver_bullet", "start": 10, "end": 11}`).
 
+### Candlestick pattern detection
+
+`CandlePatterns` is a statistical detector: it classifies a candle relative to
+the recent distribution (e.g. a hammer needs a lower wick beyond an adaptive
+percentile of the last `window` bars and a small body) rather than matching a
+fixed shape, and can gate reversal patterns by price context (z-score of close
+vs its rolling mean). Detection is pure and causal, so it is identical in
+backtest, live and replay. It draws the pattern name on each candle and exposes
+a query API - including each pattern's own causal hit-rate - through the handle
+`add_indicator()` returns:
+
+```python
+from tradetropy.ta import CandlePatterns
+
+self.candles = self.add_indicator(self.btc, CandlePatterns())
+
+# in on_data():
+if self.candles.last_pattern() == 'Bullish Engulfing':
+    eff = self.candles.efficacy('Bullish Engulfing')
+    if eff['sample_size'] >= 20 and eff['hit_rate'] > 0.55:
+        self.sesh.buy('BTCUSDT', volume=1)
+```
+
+`last_pattern()` / `pattern_at(i)` / `patterns(n)` read the pattern at a bar
+offset; `is_bullish()` / `is_bearish()` read the current bar's bias;
+`efficacy(pattern)` / `efficacy_all()` return the causal hit-rate (only signals
+whose `horizon` has elapsed are scored, so it never uses future bars).
+
+### Manual marks
+
+`ManualMarks` lets a strategy draw its own segments/levels from `on_data()` -
+useful for annotating signals, support/resistance a strategy computes at
+runtime, or debugging a detector visually. A mark is a line from
+`(ts0, price0)` to `(ts1, price1)`; leaving the end open (`None`) keeps it
+"live" until closed, extending to the latest bar/tick meanwhile:
+
+```python
+from tradetropy.ta import ManualMarks
+
+self.marks = self.add_indicator(ManualMarks.refs(self.btc), ManualMarks())
+
+# in on_data():
+if some_signal:
+    self.mark_id = self.marks.add_mark(
+        price0=self.btc.close[-1], ts0=self.ts,
+        color='#F6465D', label='Signal',
+    )
+if close_condition and self.mark_id is not None:
+    self.marks.close_mark(self.mark_id, ts1=self.ts, price1=self.btc.close[-1])
+```
+
+`update_mark(mark_id, **fields)` edits any field of an open mark;
+`remove_mark(mark_id)` / `clear_marks()` delete marks; `.marks` returns a
+read-only snapshot of every current mark.
+
+
 ## Built-in catalog
 
 - **Trend / moving averages**: `SMA`, `EMA`, `WMA`, `DEMA`, `TEMA`, `HMA`,
@@ -92,6 +148,8 @@ Both accept the same predefined-string-or-custom-dict window format as
 - **Levels / structure**: `PivotPoints`, `PivotHighLow`, `ConfirmedPivot`,
   `ZigZag`, `SwingHL`, `EqualHL`, `HHLL`, `NBS`, `FairValueGap`, `OrderBlock`,
   `MarketSessions`, `SessionLevels`, `KillZones`.
+- **Annotation**: `CandlePatterns` (statistical candlestick pattern detector
+  with causal efficacy tracking), `ManualMarks` (strategy-driven marks/levels).
 - **Volume profile**: `VolumeProfile`, `TickVolumeProfile`,
   `RollingVolumeProfile`.
 - **Order flow**: `LargeTrades`, `DeepTrades`, `DeltaBars`, `CVD`, `VolumeInfo`,

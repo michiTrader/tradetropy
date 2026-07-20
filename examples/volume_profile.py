@@ -38,6 +38,6 @@ class VPStrategy(Strategy):
 
 
 if __name__ == '__main__':
-    engine = BacktestEngine.by_klines(VPStrategy(), data=(load_btcusd_1m(),))
-    engine.run()
-    print(engine.stats)
+    bt = BacktestEngine.by_klines(VPStrategy(), data=(load_btcusd_1m(),))
+    bt.run()
+    print(bt.stats)

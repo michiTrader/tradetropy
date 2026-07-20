@@ -439,8 +439,10 @@ class TickData:
                                       format. Accepts ms (int) or str ('5m', '1h')
             include_partial (bool): Include the current incomplete candle
                                     (default False)
-            price_source (str): Price column - 'price' (default) or 'mid' for
-                                (bid+ask)/2
+            price_source (str): Price column - 'price' (default), 'mid' for
+                                (bid+ask)/2, or 'trade' to use the price column
+                                but first drop quote-only ticks (volume == 0),
+                                keeping only real trades
             volume_source (str): Volume column - 'volume' (default) or
                                  'volume_real'
 

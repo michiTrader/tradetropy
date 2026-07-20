@@ -80,7 +80,8 @@ class NBS(Indicator, PivotIndicatorMixin):
     Implements PivotIndicatorMixin. Use as decorator in add_pattern_matcher():
 
         self.setup = self.add_pattern_matcher(
-            pivots  = [self.cpivot, self.nbs],
+            base_pivot=self.cpivot,
+            decorators=[self.nbs],
             pattern = Pattern([
                 PatternNode('H', {'nbs': 'neu'}, []),
                 PatternNode('L', {'nbs': 'boo'}, []),
@@ -93,6 +94,7 @@ class NBS(Indicator, PivotIndicatorMixin):
 
     name     = "nbs"
     category = "structure"
+    source_cols = ("high", "low", "ts")
 
     use_partial = False
 

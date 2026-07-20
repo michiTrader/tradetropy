@@ -128,6 +128,21 @@ ticks = load_mesu26_ticks()
 candles_1m = ticks.to_klines('1m')       # KlineData from ticks
 ```
 
+`to_klines()` accepts a `price_source` to control which price builds the OHLC:
+`'price'` (default) uses the price column as-is, `'mid'` uses `(bid+ask)/2` for
+every tick, and `'trade'` uses the price column but first drops quote-only
+ticks (`volume == 0`), keeping only real trades. Use `'trade'` when the price
+column may contain `(bid+ask)/2` fallbacks (e.g. from `normalize_ticks()` or MT5
+quote ticks) and you need OHLC that always lands on a real traded price -
+important when candles must respect `tick_size`:
+
+```python
+candles_from_trades = ticks.to_klines('1m', price_source='trade')
+```
+
+With `'trade'`, a bar interval with no real trades in it (only quotes) produces
+no candle for that interval - it is not synthesized from quote midpoints.
+
 ### Timeframe strings
 
 Timeframe strings are parsed everywhere the same way: `1m`, `15m`, `1h`, `4h`,

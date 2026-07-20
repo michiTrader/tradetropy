@@ -6,6 +6,23 @@ at the repository root. Highlights below.
 
 ## [Unreleased]
 
+## [0.2.5]
+
+### Added
+- Zoom-aware candle level-of-detail (LOD): large backtests (6000+ candles) draw
+  a bucket-aggregated, extremes-preserving view that refines as you zoom in, so
+  big charts stay light without losing autoscale accuracy.
+- `CandlePatterns` (statistical candlestick detector with causal efficacy
+  tracking) and `ManualMarks` (strategy-driven marks/levels), both free (tier 0).
+- `price_source='trade'` on `TickData.to_klines()` / `ticks_to_klines()`.
+- Configurable log-timestamp presentation zone (`get_strategy_logger(display_tz=)`)
+  and an optional `stats_warn=` flag on `BacktestEngine.run()`.
+
+### Changed
+- `tradetropy.io` split into focused internal submodules (public API unchanged).
+- `bt.plot()` defaults to the WebGL backend; `show_price_tag` now defaults to
+  `False`.
+
 ## [0.2.4]
 
 ### Changed

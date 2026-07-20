@@ -50,7 +50,9 @@ from tradetropy.ta.annotations import (
     KillZones,
     OrderBlock,
     PivotPoints,
+    CandlePatterns,
 )
+from tradetropy.ta.manual_marks import ManualMarks
 from tradetropy.ta.order_flow import (
     LargeTrades,
     EVENT_LARGE_AGGRESSOR,

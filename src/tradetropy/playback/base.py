@@ -139,10 +139,10 @@ class BaseEngine(LiveEngine):
         # Normalize typed data (TickData/KlineData) -> tuple + feed_type.
         inputs, data_feed_type = _normalize_data(data)
         if data_feed_type != _feed_type:
-            metodo = "by_ticks" if _feed_type == "tick" else "by_klines"
-            esperado = "TickData" if _feed_type == "tick" else "KlineData"
+            method = "by_ticks" if _feed_type == "tick" else "by_klines"
+            expected = "TickData" if _feed_type == "tick" else "KlineData"
             raise ConfigError(
-                f"{type(self).__name__}.{metodo}() expected {esperado}, "
+                f"{type(self).__name__}.{method}() expected {expected}, "
                 f"received data of type {data_feed_type!r}."
             )
 

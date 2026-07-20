@@ -437,7 +437,7 @@ def _build_pattern_stores_from_shm(
     pattern_stores: dict = {}
 
     for pm_def in pattern_defs_union:
-        base_pivot_proxy = pm_def.pivots[0]
+        base_pivot_proxy = pm_def.base_pivot
         base_def = _find_ind_def_in_union(base_pivot_proxy, indicator_defs_union)
         if base_def is None:
             continue
@@ -477,7 +477,7 @@ def _build_pattern_stores_from_shm(
 
         decorator_arrays: dict[str, np.ndarray]       = {}
         tag_decoders:     dict[str, dict[float, str]] = {}
-        for dec_proxy in pm_def.pivots[1:]:
+        for dec_proxy in pm_def.decorators:
             dec_def = _find_ind_def_in_union(dec_proxy, indicator_defs_union)
             if dec_def is None:
                 continue

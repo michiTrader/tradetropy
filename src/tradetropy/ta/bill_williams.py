@@ -111,6 +111,7 @@ class Alligator(Indicator):
     category = 'trend'
     # Recursive (SMMA): reserve warmup so it converges before on_data().
     warmup_factor = 5
+    source_cols = ('high', 'low')
 
     def __init__(
         self,
@@ -181,6 +182,7 @@ class GatorOscillator(Indicator):
     name = 'gator'
     category = 'momentum'
     warmup_factor = 5
+    source_cols = ('high', 'low')
 
     def __init__(
         self,
@@ -258,6 +260,7 @@ class AcceleratorOscillator(Indicator):
 
     name = 'ac'
     category = 'momentum'
+    source_cols = ('high', 'low')
 
     def __init__(self):
         self.length = 34
@@ -331,6 +334,7 @@ class Fractals(Indicator):
 
     name = 'fractals'
     category = 'structure'
+    source_cols = ('high', 'low', 'ts')
     output_names = ['up', 'down']
     ts_band_indices = [2, 3]
     ts_output_names = ['ts_up', 'ts_down']
@@ -411,6 +415,7 @@ class MarketFacilitationIndex(Indicator):
 
     name = 'bwmfi'
     category = 'volume'
+    source_cols = ('high', 'low', 'volume')
 
     def __init__(self):
         self.length = 1

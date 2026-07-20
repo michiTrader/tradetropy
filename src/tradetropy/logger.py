@@ -84,6 +84,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from datetime import datetime, timezone, tzinfo
 from pathlib import Path
 import re
 
@@ -244,9 +245,44 @@ class TradingFormatter(PintarFormatter):
     Supports PERF, SIGNAL, and TRADING levels. Recalculates the max level
     name length to ensure proper padding with custom level names.
 
-    Built from a Theme that already contains the trading palette - no
-    additional logic is needed.
+    Built from a Theme that already contains the trading palette. The optional
+    `display_tz` decouples the presentation zone of the {asctime} field from
+    the machine's local zone: `record.created` (the epoch instant, either the
+    data timestamp in backtest or the wall clock in live) is rendered in
+    `display_tz` instead of `time.localtime`. This keeps the log's time column
+    consistent with the session's `display_tz` across backtest, live and
+    replay. Default UTC.
     """
+
+    def __init__(
+        self,
+        theme: "Theme | None" = None,
+        display_tz: tzinfo = timezone.utc,
+    ):
+        super().__init__(theme)
+        self._display_tz: tzinfo = display_tz or timezone.utc
+
+    def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:
+        """
+        Format `record.created` in `display_tz` instead of local time.
+
+        `record.created` is always epoch seconds (UTC) - the data timestamp in
+        backtest (via wrap_backtest_logger) or the system clock in live. It is
+        converted to `display_tz` for presentation, so the log's time column
+        matches the session's configured zone regardless of the machine's local
+        zone.
+
+        Args:
+            record (logging.LogRecord): The record whose time to format.
+            datefmt (str): strftime format. Falls back to '%Y-%m-%d %H:%M:%S'.
+
+        Returns:
+            str: The formatted timestamp string in `display_tz`.
+        """
+        dt = datetime.fromtimestamp(record.created, tz=self._display_tz)
+        if datefmt:
+            return dt.strftime(datefmt)
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
 
     def format(self, record: logging.LogRecord) -> str:
         if not self._theme.dye:
@@ -331,6 +367,7 @@ def get_strategy_logger(
     overrides: dict | None = None,
     fields: dict | None = None,
     stream=None,
+    display_tz: tzinfo = timezone.utc,
 ) -> logging.Logger:
     """
     Create a complete logger for a trading strategy.
@@ -356,6 +393,10 @@ def get_strategy_logger(
         fields (dict): Extra custom field definitions. Uses same schema as
                        Theme.fields.
         stream: Console stream (default sys.stdout).
+        display_tz (tzinfo): Zone used to render the {asctime} time column.
+                    The logged instant (data timestamp in backtest, wall clock
+                    in live) is presented in this zone instead of the machine's
+                    local zone. Default UTC.
 
     Returns:
         logging.Logger: Logger with methods perf(), signal(), trading().
@@ -370,6 +411,13 @@ def get_strategy_logger(
     logger = logging.getLogger(name)
     if logger.handlers:
         logger.setLevel(level)
+        # Keep the presentation zone current even for a cached logger, so a
+        # later run with a different display_tz is honored.
+        tz = display_tz or timezone.utc
+        for h in logger.handlers:
+            fmt_obj = h.formatter
+            if isinstance(fmt_obj, TradingFormatter):
+                fmt_obj._display_tz = tz
         return logger
 
     logger.setLevel(level)
@@ -396,7 +444,7 @@ def get_strategy_logger(
     # Console handler
     sh = logging.StreamHandler(stream or sys.stdout)
     sh.setLevel(level)
-    sh.setFormatter(TradingFormatter(theme_color))
+    sh.setFormatter(TradingFormatter(theme_color, display_tz=display_tz))
     logger.addHandler(sh)
 
     # File handler (optional, no color)
@@ -405,7 +453,7 @@ def get_strategy_logger(
         log_path.parent.mkdir(parents=True, exist_ok=True)
         fh = logging.FileHandler(log_path, mode="a", encoding="utf-8")
         fh.setLevel(level)
-        fh.setFormatter(TradingFormatter(theme_plain))
+        fh.setFormatter(TradingFormatter(theme_plain, display_tz=display_tz))
         logger.addHandler(fh)
 
     return logger

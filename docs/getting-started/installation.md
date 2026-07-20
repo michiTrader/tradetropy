@@ -71,15 +71,30 @@ the full data-IO stack on Termux with no HDF5 at all. Do **not** try to install
 the `hdf5` extra there.
 
 ```bash
-# 1. Update Termux and install Python + the prebuilt scientific stack.
-#    contourpy is pulled in by Bokeh (the plotting stack).
+# 1. Update Termux and install Python.
 pkg update && pkg upgrade -y
 pkg install -y python
-pkg install -y python-numpy
-pkg install -y python-pandas
-pkg install -y python-contourpy
 
-# 2. Restart Termux (close and reopen the app) so the new libraries are
+# 2. If you ever ran `pip install numpy` (or pandas/contourpy) by mistake
+#    BEFORE this step, pip's own wheel is now shadowing the pkg version and
+#    the pkg install below will fail or silently not take effect. Undo it
+#    first: uninstall the pip-installed copy, then purge both caches so a
+#    stale wheel is never reused, and only then install via pkg.
+#      pip uninstall -y numpy pandas contourpy
+#      pkg clean
+#      pip cache purge
+
+# 3. Install the prebuilt scientific stack via pkg (NOT pip). contourpy is
+#    pulled in by Bokeh (the plotting stack). One command is equivalent to
+#    installing them separately.
+pkg install -y python-numpy python-pandas python-contourpy
+
+# Optional: only if you want to read/save .parquet files (pyarrow has a
+# prebuilt Termux package). HDF5 does not work on Termux - do not install
+# the hdf5 extra there (see note above).
+pkg install -y python-pyarrow
+
+# 4. Restart Termux (close and reopen the app) so the new libraries are
 #    picked up by a fresh shell, then install tradetropy normally.
 pip install tradetropy
 ```

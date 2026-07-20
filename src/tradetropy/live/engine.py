@@ -21,7 +21,7 @@ FULL FLOW
 from __future__ import annotations
 
 import threading
-from typing import Optional
+from typing import Optional, Literal
 
 import numpy as np
 
@@ -76,7 +76,7 @@ class LiveEngine:
         self,
         strategy: Strategy,
         sesh=None,
-        _feed_type: str = "tick",
+        _feed_type: Literal["tick", "kline"] = "tick",
         _poll_interval: float = 1.0,
         chart_ohlc_interval_ms: int = 60_000,
         require_warmup: bool = True,

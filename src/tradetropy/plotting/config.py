@@ -141,7 +141,12 @@ class PlotConfig:
     plot_footprint       : show footprint (requires FpProxy in strategy)
     plot_volume_profile  : show Volume Profile bar histogram
     show_price_tag       : show the floating price box that follows the
-                           crosshair snapped to the Y-axis (TradingView style)
+                           crosshair snapped to the Y-axis (TradingView style).
+                           Default False: its mousemove handler repaints the
+                           tag on every tick boundary crossed, which can weigh
+                           on very dense charts. When True it can also be turned
+                           on/off at runtime from the "Toggle price tag" toolbar
+                           button.
     width                : total width in pixels
     ohlc_height          : main OHLC panel height
     equity_height        : equity/return panel height
@@ -192,7 +197,15 @@ class PlotConfig:
                              http://localhost:5006 (or the printed network IP)
                              from any browser. Stop with Ctrl+C.
     server_port          : Bokeh Server port when output="server" (default 5006)
-    output_backend       : "canvas" | "webgl" | "svg"
+    output_backend       : "canvas" | "webgl" | "svg". Default "webgl": the
+                           frame is repainted on the GPU on every pan/zoom and
+                           crosshair move, so interaction stays smooth as the
+                           candle/indicator count grows (WebGL accelerates the
+                           line/step/segment/vbar/hbar/quad/rect glyphs used by
+                           the candles, volume, indicators, equity, drawdown and
+                           P&L). Use "canvas" for the classic CPU backend (e.g.
+                           deterministic headless PNG export) and "svg" for
+                           vector export.
     filename             : HTML filename (only if output="file")
     resample_timeframe   : Regroup candles to the given interval before
                            drawing. Accepts a timeframe string ('1m', '5m',
@@ -218,7 +231,7 @@ class PlotConfig:
     plot_volume: bool = True
     plot_footprint: bool = True
     plot_volume_profile: bool = True
-    show_price_tag: bool = True
+    show_price_tag: bool = False
     plot_stats: bool = False
     plot_pl: bool = False
     pl_height: int = 70
@@ -237,7 +250,7 @@ class PlotConfig:
     theme: Literal["light", "dark"] = "light"
     output: Literal["notebook", "file", "show", "server"] = "show"
     server_port: int = 5006
-    output_backend: Literal["canvas", "webgl", "svg"] = "canvas"
+    output_backend: Literal["canvas", "webgl", "svg"] = "webgl"
     filename: str = "backtest.html"
     resample_timeframe: str | None = None
     align_trades_to_candle: bool = True

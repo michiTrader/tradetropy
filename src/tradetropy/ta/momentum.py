@@ -75,6 +75,7 @@ class WilliamsR(Indicator):
 
     name = 'williams_r'
     category = 'momentum'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 14):
         self.length = length
@@ -116,6 +117,7 @@ class CCI(Indicator):
 
     name = 'cci'
     category = 'momentum'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 20):
         self.length = length
@@ -158,6 +160,7 @@ class MFI(Indicator):
 
     name = 'mfi'
     category = 'momentum'
+    source_cols = ('high', 'low', 'close', 'volume')
 
     def __init__(self, length: int = 14):
         self.length = length
@@ -206,6 +209,7 @@ class Stochastic(Indicator):
 
     name = 'stochastic'
     category = 'momentum'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, k_period: int = 14, k_smooth: int = 3, d_smooth: int = 3):
         self.k_period = k_period
@@ -263,6 +267,7 @@ class KeltnerChannels(Indicator):
 
     name = 'keltner'
     category = 'volatility'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 20, mult: float = 2.0):
         self.length = length
@@ -317,6 +322,7 @@ class DonchianChannels(Indicator):
 
     name = 'donchian'
     category = 'volatility'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 20):
         self.length = length
@@ -357,6 +363,7 @@ class OBV(Indicator):
 
     name = 'obv'
     category = 'volume'
+    source_cols = ('close', 'volume')
 
     def __init__(self):
         self.output_names = ['obv']
@@ -392,6 +399,7 @@ class VWAP(Indicator):
 
     name = 'vwap'
     category = 'trend'
+    source_cols = ('ts', 'open', 'high', 'low', 'close', 'volume')
 
     def __init__(self):
         self.output_names = ['vwap']
@@ -433,6 +441,7 @@ class ADX(Indicator):
 
     name = 'adx'
     category = 'trend'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 14):
         self.length = length
@@ -517,6 +526,7 @@ class ParabolicSAR(Indicator):
 
     name = 'parabolic_sar'
     category = 'trend'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, af_start: float = 0.02, af_step: float = 0.02, af_max: float = 0.2):
         self.af_start = af_start
@@ -583,6 +593,7 @@ class Supertrend(Indicator):
 
     name = 'supertrend'
     category = 'trend'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 10, mult: float = 3.0):
         self.length = length
@@ -664,6 +675,7 @@ class Ichimoku(Indicator):
 
     name = 'ichimoku'
     category = 'trend'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, tenkan: int = 9, kijun: int = 26, senkou_b: int = 52):
         self.tenkan = tenkan
@@ -942,6 +954,7 @@ class UltimateOscillator(Indicator):
 
     name = 'ultosc'
     category = 'momentum'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, period1: int = 7, period2: int = 14, period3: int = 28):
         self.period1 = period1
@@ -1154,6 +1167,7 @@ class AwesomeOscillator(Indicator):
 
     name = 'ao'
     category = 'momentum'
+    source_cols = ('high', 'low')
 
     def __init__(self):
         self.output_names = ['ao']
@@ -1199,6 +1213,7 @@ class BOP(Indicator):
 
     name = 'bop'
     category = 'momentum'
+    source_cols = ('open', 'high', 'low', 'close')
 
     def __init__(self):
         self.output_names = ['bop']
@@ -1283,6 +1298,7 @@ class MassIndex(Indicator):
 
     name = 'mi'
     category = 'momentum'
+    source_cols = ('high', 'low')
 
     def __init__(self, length: int = 9, sum_length: int = 25):
         self.length = length
@@ -1339,6 +1355,7 @@ class ChaikinAD(Indicator):
 
     name = 'chaikin_ad'
     category = 'volume'
+    source_cols = ('high', 'low', 'close', 'volume')
 
     def __init__(self):
         self.output_names = ['ad']
@@ -1373,6 +1390,7 @@ class ChaikinOsc(Indicator):
 
     name = 'chaikin_osc'
     category = 'volume'
+    source_cols = ('high', 'low', 'close', 'volume')
 
     def __init__(self, fast: int = 3, slow: int = 10):
         self.fast = fast
@@ -1419,6 +1437,7 @@ class ForceIndex(Indicator):
 
     name = 'fi'
     category = 'volume'
+    source_cols = ('close', 'volume')
 
     def __init__(self, length: int = 13):
         self.length = length
@@ -1470,6 +1489,7 @@ class EMV(Indicator):
 
     name = 'emv'
     category = 'volume'
+    source_cols = ('high', 'low', 'volume')
 
     def __init__(self, length: int = 14):
         self.length = length
@@ -1522,6 +1542,7 @@ class VWMA(Indicator):
 
     name = 'vwma'
     category = 'trend'
+    source_cols = ('close', 'volume')
 
     def __init__(self, length: int = 20):
         self.length = length
@@ -1556,6 +1577,7 @@ class Aroon(Indicator):
 
     name = 'aroon'
     category = 'trend'
+    source_cols = ('high', 'low')
 
     def __init__(self, length: int = 25):
         self.length = length
@@ -1598,6 +1620,7 @@ class Vortex(Indicator):
 
     name = 'vortex'
     category = 'trend'
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 14):
         self.length = length
@@ -1855,6 +1878,7 @@ class BullsPower(Indicator):
     name = 'bulls'
     category = 'momentum'
     warmup_factor = 5
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 13):
         self.length = length
@@ -1918,6 +1942,7 @@ class BearsPower(Indicator):
     name = 'bears'
     category = 'momentum'
     warmup_factor = 5
+    source_cols = ('high', 'low', 'close')
 
     def __init__(self, length: int = 13):
         self.length = length
@@ -1982,6 +2007,7 @@ class DeMarker(Indicator):
 
     name = 'demarker'
     category = 'momentum'
+    source_cols = ('high', 'low')
 
     def __init__(self, length: int = 14):
         self.length = length
@@ -2068,6 +2094,7 @@ class RVI(Indicator):
 
     name = 'rvi'
     category = 'momentum'
+    source_cols = ('open', 'high', 'low', 'close')
 
     def __init__(self, length: int = 10):
         self.length = length

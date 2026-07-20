@@ -44,6 +44,23 @@ sub-candle microstructure precision:
 bt.plot(align_indicators_to_candle=False)
 ```
 
+## Level of detail on large charts
+
+A backtest chart with tens of thousands of candles automatically switches to a
+**level-of-detail (LOD)** view once the series exceeds 6000 candles (and no
+footprint is enabled, which is already a zoomed-in detail view). The full
+candle data stays intact; only the currently visible window is drawn, capped at
+4000 candles. When the visible window is small enough, every real candle is
+shown 1:1; when it is not, the window is aggregated into buckets and each is
+reduced to one synthetic candle (`open`=first, `close`=last, `high`=max,
+`low`=min, `volume`=sum). Because each bucket keeps its true high/low, the
+Y-axis autoscale still frames the panel correctly - the reduction is purely a
+drawing optimization, refined automatically as you zoom in.
+
+There is nothing to configure: LOD kicks in transparently based on the candle
+count, and the HoverTool on a bucketed candle describes the aggregated OHLCV
+for that time span rather than a single original candle.
+
 ## Live and replay charts
 
 Live, replay and paper-trading sessions use `LiveChart`, which streams the same

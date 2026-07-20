@@ -297,11 +297,18 @@ class Strategy:
         # backtest/replay from inheriting log_file from the class.
         log_file_efectivo = self.log_file if (self._save_log and self.log_file) else None
 
+        # Presentation zone for the log time column. Read from the session's
+        # display_tz so the log matches sesh.str_time in every run mode
+        # (backtest / live / replay). Falls back to UTC when unavailable.
+        from datetime import timezone as _timezone
+        display_tz = getattr(self._sesh, "display_tz", _timezone.utc) or _timezone.utc
+
         logger = get_strategy_logger(
             name       = self.__class__.__name__,
             name_color = self.log_color,
             log_file   = log_file_efectivo,
             level      = self.log_level,
+            display_tz = display_tz,
         )
 
         # In backtest, replace the clock timestamp with the data timestamp
@@ -829,6 +836,11 @@ class Strategy:
             # On-demand public query API (e.g. Heatmap.liquidity_at / hottest).
             if getattr(indicator, "exposes_query_api", False):
                 proxy._set_query_provider(indicator)
+                # Opt-in: give the indicator the source proxy so its query
+                # methods can recompute causally from the current window
+                # (e.g. CandlePatterns.last_pattern / efficacy).
+                if hasattr(indicator, "set_query_source"):
+                    indicator.set_query_source(sources[0]._proxy)
         else:
             proxy = IndicatorProxy()
 
@@ -904,9 +916,10 @@ class Strategy:
 
     def add_pattern_matcher(
         self,
-        pivots:  list,
+        base_pivot,
         pattern: "Pattern | str",
         *,
+        decorators: list | None = None,
         tag: str = "pattern",
     ) -> "PatternMatcherProxy":
         """
@@ -924,7 +937,8 @@ class Strategy:
         The DSL is parsed automatically with ``parse_pattern()``:
 
             self.setup = self.add_pattern_matcher(
-                pivots  = [self.cpivot, self.nbs],
+                base_pivot=self.cpivot,
+                decorators=[self.nbs],
                 pattern = \"\"\"
                     L[nbs=boo]
                     H[nbs=neu]  > $0
@@ -1006,7 +1020,10 @@ class Strategy:
                 @before(16:00, tz=Europe/London)
                 @weekday(monday, tuesday, wednesday)
                 @weekday(friday, tz=America/New_York)
-                @hours_since($0.timestamp, min=2, max=168)
+                @time_since($0.timestamp, min=2, max=168)          # unit=h (default)
+                @time_since($0.timestamp, min=5, max=15, unit=m)   # minutes
+                @time_since($0.timestamp, min=30, unit=s)          # seconds
+                @hours_since($0.timestamp, min=2, max=168)         # alias, always hours
                 @hours_since($-1.timestamp, min=0, max=24)
 
             The lhs of the comparison uses the SAME attribute as the rhs:
@@ -1179,6 +1196,10 @@ class Strategy:
                               min_hours=0, max_hours=24)
                 max_hours=None = no upper limit
 
+                In the DSL this is written @time_since($N.timestamp,
+                min=..., max=..., unit=h|m|s) (minutes/seconds converted to
+                hours by the parser); @hours_since is the hours-only alias.
+
         ── TagCondition ────────────────────────────────────────────────
         Condition on a tag value of the current node.
         Useful for OR between tags of different keys (nbs vs hhll).
@@ -1266,17 +1287,14 @@ class Strategy:
         ═══════════  PARAMETERS  ════════════════════════════════════════
         ──────────────────────────────────────────────────────────────────
 
-        pivots
-            List of pivot indicator proxies declared with add_indicator().
-            · The FIRST must always be the base ConfirmedPivot.
-              Without it there is no pivot sequence.
-            · The FOLLOWING are optional decorators (NBS, HHLL...)
-              that add additional tags to each pivot.
-            · ALL must operate on the same OhlcProxy (same symbol
-              and interval).
-            · The list order determines the order tags are queried
-              when building PivotPoint: base first, then the first
-              decorator, etc.
+        base_pivot
+            Proxy returned by add_indicator() for the base ConfirmedPivot.
+            It provides the H/L pivot sequence and is mandatory.
+
+        decorators
+            Optional list of pivot indicator proxies such as NBS or HHLL.
+            They add tags to the base pivot sequence. All decorators must use
+            the same OhlcProxy as ``base_pivot``.
 
         pattern
             Can be:
@@ -1313,7 +1331,8 @@ class Strategy:
                 )
 
                 self.setup = self.add_pattern_matcher(
-                    pivots  = [self.cpivot, self.nbs],
+                    base_pivot=self.cpivot,
+                decorators=[self.nbs],
                     pattern = \"\"\"
                         # Base support — Booster in NY session
                         L[nbs=boo]  @between(09:30, 16:00, tz=America/New_York)
@@ -1348,7 +1367,8 @@ class Strategy:
                 # ... ohlc and pivots setup ...
 
                 self.setup = self.add_pattern_matcher(
-                    pivots  = [self.cpivot, self.nbs],
+                    base_pivot=self.cpivot,
+                decorators=[self.nbs],
                     pattern = Pattern([
                         PatternNode('H', {'nbs': 'neu'}, []),
                         PatternNode('L', {'nbs': 'boo'}, [],
@@ -1379,7 +1399,8 @@ class Strategy:
 
             def init(self):
                 self.setup = self.add_pattern_matcher(
-                    pivots  = [self.cpivot, self.nbs],
+                    base_pivot=self.cpivot,
+                decorators=[self.nbs],
                     pattern = \"\"\"
                         H[nbs=neu]
                         L?[nbs=boo]
@@ -1399,7 +1420,8 @@ class Strategy:
 
             def init(self):
                 self.setup = self.add_pattern_matcher(
-                    pivots  = [self.cpivot, self.nbs],
+                    base_pivot=self.cpivot,
+                decorators=[self.nbs],
                     pattern = \"\"\"
                         # OR inline: nbs='neu' OR 'shk' (same key)
                         H[nbs=neu|shk]  > $0
@@ -1419,24 +1441,83 @@ class Strategy:
                         match.tag, match.values,
                     )
         """
+        from tradetropy.ta.pattern.matcher import PatternMatcherProxy, PatternMatcherDef
+        from tradetropy.ta.pattern.pivot_mixin import PivotIndicatorMixin
+
+        if decorators is None:
+            decorators = []
+        elif not isinstance(decorators, (list, tuple)):
+            raise ConfigError(
+                "'decorators' must be a list or tuple of pivot indicators."
+            )
+
+        pivot_list = [base_pivot, *decorators]
+
+        def _indicator_def(proxy):
+            for indicator_def in self._indicator_defs:
+                if indicator_def["proxy"] is proxy:
+                    return indicator_def
+            return None
+
+        base_def = _indicator_def(pivot_list[0])
+        if base_def is None:
+            raise ConfigError(
+                "'base_pivot' must be a proxy returned by add_indicator()."
+            )
+
+        base_indicator = base_def["indicator"]
+        if not isinstance(base_indicator, PivotIndicatorMixin):
+            raise ConfigError(
+                "'base_pivot' must be a pivot indicator implementing "
+                "PivotIndicatorMixin, normally ConfirmedPivot."
+            )
+        if not getattr(base_indicator, "is_base_pivot", False):
+            raise ConfigError(
+                "The first pattern matcher pivot must be a base pivot "
+                "(ConfirmedPivot). Indicators such as NBS and HHLL belong "
+                "in 'decorators'."
+            )
+
+        base_source = base_def["sources"][0]._proxy
+        for position, decorator_proxy in enumerate(pivot_list[1:], start=1):
+            decorator_def = _indicator_def(decorator_proxy)
+            if decorator_def is None:
+                raise ConfigError(
+                    f"Pattern matcher decorator at position {position} must "
+                    "be a proxy returned by add_indicator()."
+                )
+
+            decorator_indicator = decorator_def["indicator"]
+            if not isinstance(decorator_indicator, PivotIndicatorMixin):
+                raise ConfigError(
+                    f"Pattern matcher decorator at position {position} must "
+                    "implement PivotIndicatorMixin."
+                )
+            if getattr(decorator_indicator, "is_base_pivot", False):
+                raise ConfigError(
+                    "Only one base pivot is allowed. Additional pivot "
+                    "indicators must be decorators."
+                )
+            if decorator_def["sources"][0]._proxy is not base_source:
+                raise ConfigError(
+                    "The base pivot and all pattern decorators must use the "
+                    "same OHLC subscription."
+                )
+
+        if pattern is None:
+            raise ConfigError("add_pattern_matcher() requires a pattern.")
+
         # Accept DSL string directly — no need to import parse_pattern
         if isinstance(pattern, str):
             from tradetropy.ta.pattern.pattern_dsl import parse_pattern
             pattern = parse_pattern(pattern, tag=tag)
 
-        from tradetropy.ta.pattern.matcher import PatternMatcherProxy, PatternMatcherDef
-
-        if not pivots:
-            raise ConfigError(
-                "add_pattern_matcher() requires at least one proxy in 'pivots'. "
-                "The first must be the base ConfirmedPivot declared with add_indicator()."
-            )
-
         proxy = PatternMatcherProxy()
-        defn  = PatternMatcherDef(
-            pivots  = list(pivots),
-            pattern = pattern,
-            proxy   = proxy,
+        defn = PatternMatcherDef(
+            base_pivot=pivot_list[0],
+            decorators=list(pivot_list[1:]),
+            pattern=pattern,
+            proxy=proxy,
         )
         self._pattern_matcher_defs.append(defn)
         return proxy

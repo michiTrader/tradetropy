@@ -75,6 +75,7 @@ class ZigZag(Indicator):
 
     name            = "zigzag"
     category        = "structure"
+    source_cols     = ("high", "low", "ts")
     output_names    = ["zigzag"]
     ts_band_indices = [1]
     ts_output_names = ["ts_real"]

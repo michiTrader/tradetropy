@@ -1046,6 +1046,7 @@ def compute_stats(
     *,
     min_trades: int = MIN_TRADES_FOR_STATS,
     min_duration_ann: pd.Timedelta = MIN_DURATION_ANN,
+    warn: bool = True,
 ) -> 'Stats':
     """
     Calculate all performance metrics and return Stats object.
@@ -1067,6 +1068,15 @@ def compute_stats(
                             - >= 30d  -> '1D'
                           Use explicit values for consistency: '1D', '1h',
                           '5min', '1min'.
+        warn (bool): Emit a UserWarning when the sample is too small to trust
+                    the annualized/trade-distribution metrics (see "Statistical
+                    reliability gating" below). The gating itself (zeroing
+                    those metrics to NaN and setting Stats["_low_sample"]) always
+                    happens regardless of this flag - only the warning message
+                    is optional. Quick exploratory runs on a small dataset can
+                    set this to False to silence the notice, mirroring
+                    backtesting.py's quieter behavior (which reports 0/NaN with
+                    no explicit warning in that case).
 
     Returns:
         Stats: Object containing all metrics accessible via dict interface.
@@ -1206,11 +1216,12 @@ def compute_stats(
                 f"{n_closed} closed trade(s) < {min_trades} "
                 f"(zeros {', '.join(_TRADE_DIST_METRICS)})"
             )
-        warnings.warn(
-            "Stats: insufficient sample, metrics zeroed to NaN -- "
-            + "; ".join(reasons),
-            stacklevel=2,
-        )
+        if warn:
+            warnings.warn(
+                "Stats: insufficient sample, metrics zeroed to NaN -- "
+                + "; ".join(reasons),
+                stacklevel=2,
+            )
 
     for k in metrics:
         metrics[k] = _round4(metrics[k])

@@ -875,7 +875,7 @@ class SeshSimulatorBase(Sesh):
 
     def __init__(
         self,
-        feed_type: "FeedType | None" = None,
+        feed_type: "Literal['tick', 'kline'] | None" = None,
         initial_balance: float = 10000.0,
         commission: float = 0.0,
         commission_type: CommissionType = CommissionType.COMMISSION_TYPE_MONEY,

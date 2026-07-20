@@ -398,6 +398,17 @@ class Indicator:
     # min_periods (no inflation).
     warmup_factor: int = 1
 
+    # source_cols: names of the proxy columns this indicator consumes, IN THE
+    # ORDER calculate() expects them. Drives the generic refs()/default_refs()
+    # helpers below so a multi-source indicator no longer forces the caller to
+    # spell out [proxy.high_ref, proxy.low_ref, proxy.close_ref] by hand: it can
+    # pass the proxy directly (add_indicator(self.btc, Stochastic())) or the
+    # helper (Stochastic.refs(self.btc)). Single-source indicators keep the
+    # default ('close',). Order-flow / tick indicators that build tick-specific
+    # refs override refs()/default_refs() themselves. Passing an explicit
+    # ColumnRef list stays fully supported.
+    source_cols: tuple = ("close",)
+
     # n_outputs: automatically derived - do NOT override
     @property
     def n_outputs(self) -> int:
@@ -450,6 +461,50 @@ class Indicator:
             list: Draw primitives, or [] when the indicator draws as series only.
         """
         return []
+
+    @classmethod
+    def refs(cls, proxy) -> list:
+        """
+        Build the ColumnRef list this indicator consumes, in the expected order.
+
+        Generic convenience so a multi-source indicator does not force the
+        caller to spell out every column by hand. Reads ``cls.source_cols`` and
+        resolves each name against the proxy:
+
+            self.stoch = self.add_indicator(
+                Stochastic.refs(self.btc), Stochastic(),
+            )
+
+        Equivalent to passing the proxy directly to ``add_indicator`` (which
+        calls :meth:`default_refs`). Passing an explicit ColumnRef list stays
+        supported. Indicators with tick-specific columns (order flow) override
+        this.
+
+        Args:
+            proxy (OhlcProxy | TickProxy): An already-subscribed source proxy.
+
+        Returns:
+            list[ColumnRef]: One ColumnRef per name in ``source_cols``.
+        """
+        return [proxy.col_ref(col) for col in cls.source_cols]
+
+    def default_refs(self, proxy) -> list:
+        """
+        Resolve the source columns when the proxy is passed directly to
+        ``add_indicator`` (``add_indicator(self.btc, Stochastic())``).
+
+        Instance-level counterpart of :meth:`refs`; reads ``self.source_cols``
+        so subclasses that make ``source_cols`` an instance attribute (dynamic
+        columns) resolve correctly. Order-flow indicators override this to build
+        tick-specific refs.
+
+        Args:
+            proxy (OhlcProxy | TickProxy): An already-subscribed source proxy.
+
+        Returns:
+            list[ColumnRef]: One ColumnRef per name in ``source_cols``.
+        """
+        return [proxy.col_ref(col) for col in self.source_cols]
 
     def col_name(self, symbol: str, col_source: str = "") -> str:
         """Internal DataStore key. Do not use as display label."""

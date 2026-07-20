@@ -52,6 +52,104 @@ def build_ohlc_source(ohlc_array: np.ndarray, interval_ms: int):
     ))
 
 
+# Candlestick level-of-detail. A candle source larger than the threshold keeps
+# its full data in a backing source; only a capped, bucket-aggregated view of
+# the visible window is drawn (refined on zoom by ``decimate_candles.js``).
+# Bucket aggregation preserves each bucket's high/low, so the Y-autoscale (which
+# scans the drawn source) still frames the panel correctly while scanning far
+# fewer rows. Below the threshold candles draw in full with no callback.
+_CANDLE_LOD_THRESHOLD = 6000
+_CANDLE_LOD_MAX_VISIBLE = 4000
+
+
+def _aggregate_candle_view(data: dict, max_visible: int) -> dict:
+    """
+    Bucket-aggregate a full candle-source dict into at most ``max_visible`` rows.
+
+    Python mirror of ``decimate_candles.js`` used to SEED the drawn view before
+    any interaction (the JS callback refines it on the first pan/zoom). Splits
+    the rows into ``max_visible`` equal-index buckets and reduces each to one
+    synthetic candle (open=first, close=last, high=max, low=min, volume=sum),
+    keeping the extremes so autoscale stays correct. Non-OHLC columns are
+    carried from each bucket's last row.
+    """
+    ts = np.asarray(data["ts"])
+    n = len(ts)
+    if n <= max_visible:
+        return dict(data)
+
+    edges = np.linspace(0, n, max_visible + 1).astype(np.int64)
+    a = edges[:-1]
+    last = np.maximum(a, edges[1:] - 1)
+
+    open_ = np.asarray(data["Open"])
+    high = np.asarray(data["High"])
+    low = np.asarray(data["Low"])
+    close = np.asarray(data["Close"])
+    vol = np.asarray(data["Volume"], dtype=np.float64)
+
+    agg_open = open_[a]
+    agg_close = close[last]
+    agg_high = np.maximum.reduceat(high, a)
+    agg_low = np.minimum.reduceat(low, a)
+    agg_vol = np.add.reduceat(vol, a)
+
+    ts_ms = ts.astype("datetime64[ms]").astype(np.int64)
+    span = np.maximum(ts_ms[last] - ts_ms[a], 1)
+    half = (span * 0.45).astype(np.int64)
+    tc = ts_ms[last]
+
+    out = {k: (np.asarray(v)[last] if isinstance(v, np.ndarray) or hasattr(v, "__len__")
+               else v) for k, v in data.items()}
+    out["ts"] = ts[last]
+    out["Open"] = agg_open
+    out["High"] = agg_high
+    out["Low"] = agg_low
+    out["Close"] = agg_close
+    out["Volume"] = agg_vol
+    out["inc"] = (agg_close >= agg_open).astype(np.uint8).astype(str)
+    out["top_body"] = np.maximum(agg_open, agg_close)
+    out["bottom_body"] = np.minimum(agg_open, agg_close)
+    out["bar_width"] = (half * 2).astype(np.float64)
+    out["ts_left"] = (tc - half).astype("datetime64[ms]")
+    out["ts_right"] = (tc + half).astype("datetime64[ms]")
+    return out
+
+
+def build_ohlc_lod_sources(ohlc_array: np.ndarray, interval_ms: int,
+                           max_visible: int = _CANDLE_LOD_MAX_VISIBLE):
+    """
+    Build (full_source, view_source) for candle level-of-detail.
+
+    ``full_source`` holds every candle (backing data for the JS callback);
+    ``view_source`` is the seeded, bucket-aggregated source the glyphs draw.
+    Returns (full, view). The caller wires ``decimate_candles.js`` to refine
+    ``view`` on zoom via :func:`attach_candle_lod`.
+    """
+    from bokeh.models import ColumnDataSource
+
+    full = build_ohlc_source(ohlc_array, interval_ms)
+    view = ColumnDataSource(_aggregate_candle_view(full.data, max_visible))
+    return full, view
+
+
+def attach_candle_lod(x_range, full_src, view_src,
+                      max_visible: int = _CANDLE_LOD_MAX_VISIBLE) -> None:
+    """Wire decimate_candles.js so the drawn candle view refines on pan/zoom."""
+    import pathlib
+    from bokeh.models import CustomJS
+
+    js_dir = pathlib.Path(__file__).resolve().parent / "js"
+    body = (js_dir / "decimate_candles.js").read_text()
+    cb = CustomJS(
+        args=dict(full=full_src, view=view_src, x_range=x_range,
+                  max_visible=max_visible),
+        code=body,
+    )
+    x_range.js_on_change("start", cb)
+    x_range.js_on_change("end", cb)
+
+
 def _fp_scalars_from_candle(candle) -> tuple[float, float, float, float, float, float, float]:
     """
     Extract the 7 footprint scalars from an FpCandle for the HoverTool OHLC.

@@ -380,6 +380,50 @@ def _indicator_primitive_groups(defn: dict, interval_ms: "int | None") -> "dict 
     return {legend: list(prims)}
 
 
+
+
+def _restore_indicator_draw_state(defn: dict) -> None:
+    """Restore full OHLC state before collecting draw primitives.
+
+    OHLC indicators with ``use_partial=True`` are recalculated on every tick.
+    That final partial calculation can replace the full-series arrays that a
+    geometric indicator keeps for ``draw()``. Recalculate from the complete
+    backtest OHLC store so static plots retain historical annotations.
+    """
+    indicator = defn['indicator']
+    from tradetropy.ta.base import Indicator
+
+    if type(indicator).draw is Indicator.draw:
+        return
+
+    sources = defn.get('sources') or [defn['source']]
+    source_proxy = getattr(sources[0], 'proxy', None)
+    store = getattr(source_proxy, '_ohlc_store', None)
+    if store is None or len(store.matrix) == 0:
+        return
+
+    try:
+        from tradetropy.core.constants import _OHLC_COL
+
+        col_indices = [_OHLC_COL[ref.col_name] for ref in sources]
+        source = store.matrix[:, col_indices]
+        if len(col_indices) == 1:
+            source = source[:, 0]
+
+        n_ticks = len(store.tick_to_candle_mapping)
+        if getattr(indicator, 'use_partial', True) and n_ticks > 0:
+            partial = store.partial_tick_candle(n_ticks - 1)
+            if len(col_indices) == 1:
+                source = np.append(source, partial[col_indices[0]])
+            else:
+                source = np.vstack((source, partial[col_indices]))
+
+        indicator.calculate(source)
+    except (AttributeError, IndexError, KeyError, ValueError):
+        # The normal series path remains usable for custom indicators whose
+        # source cannot be reconstructed from an OHLC backtest store.
+        return
+
 def _meta_from_defn(
     defn: dict,
     values: np.ndarray,
@@ -758,6 +802,7 @@ def _gather_plot_data(bt) -> dict:
         else:
             ts_aligned = ohlc_timestamps_ms
 
+        _restore_indicator_draw_state(defn)
         meta = _meta_from_defn(defn, values, ts_aligned, close_prices, color_idx)
         if meta is not None:
             meta._draw_primitives = _indicator_primitive_groups(defn, interval_ms)

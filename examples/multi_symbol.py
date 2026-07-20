@@ -37,6 +37,6 @@ class MultiSymbolSma(Strategy):
 
 if __name__ == '__main__':
     data = (load_btcusd_1m(), load_adausd_1m())
-    engine = BacktestEngine.by_klines(MultiSymbolSma(), data=data)
-    engine.run()
-    print(engine.stats)
+    bt = BacktestEngine.by_klines(MultiSymbolSma(), data=data)
+    bt.run()
+    print(bt.stats)

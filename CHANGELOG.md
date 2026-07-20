@@ -37,6 +37,53 @@ lives in the tier manifest (see the release tooling).
 
 ## [Unreleased]
 
+## [0.2.5]
+
+### Added
+- Zoom-aware level-of-detail (LOD) for the candlestick/volume panel: a chart
+  with more than 6000 candles keeps the full series in a backing source and
+  draws a bucket-aggregated view (open/close/high/low/volume) capped at 4000
+  candles, refined automatically as you zoom in. Bucket aggregation preserves
+  each bucket's true high/low, so the Y-axis autoscale still frames the panel
+  correctly while scanning far fewer rows - large backtests plot noticeably
+  lighter. Disabled automatically when the footprint panel is enabled (already
+  a zoomed-in detail view).
+- `CandlePatterns`: statistical candlestick pattern detector (annotation) with
+  adaptive percentile thresholds, an optional price-context z-score filter and
+  causal efficacy tracking (`last_pattern()`, `pattern_at()`, `patterns()`,
+  `is_bullish()`/`is_bearish()`, `efficacy()`/`efficacy_all()`), free (tier 0).
+- `ManualMarks`: strategy-driven manual marks/levels (segments with optional
+  markers and labels) added, updated and closed from `on_data()`, free (tier 0).
+- `TickData.to_klines()` / `ticks_to_klines()`: new `price_source='trade'` drops
+  quote-only ticks (`volume == 0`) before building OHLC, so candles always land
+  on a real traded price instead of a `(bid+ask)/2` fallback.
+- `get_strategy_logger(display_tz=)`: renders the strategy logger's `{asctime}`
+  column in a configurable zone (default UTC), decoupled from the machine's
+  local zone and from what instant is actually logged.
+- `BacktestEngine.run(stats_warn=)`: optionally silences the "Stats:
+  insufficient sample" `UserWarning` for quick exploratory runs on small
+  datasets. The reliability gating itself (metrics zeroed to NaN,
+  `stats["_low_sample"]`) always applies regardless of this flag.
+- Generic `source_cols`-driven `refs()` / `default_refs()` on `Indicator`, so
+  any indicator that only declares `source_cols` (the common case) resolves
+  its columns automatically - no per-indicator `refs()` override needed.
+
+### Changed
+- Internal `tradetropy.io` module split into focused submodules
+  (`_backends`, `_common`, `_ticks`, `_klines`, `_book`, `_mbo`, `_record`,
+  `_compat`); the public `tradetropy.io` API is unchanged.
+- `bt.plot()` defaults to the WebGL canvas backend for smoother pan/zoom/
+  crosshair interaction on dense charts; `show_price_tag` now defaults to
+  `False` (its mousemove handler repaints on every tick boundary crossed).
+  Both remain configurable via `PlotConfig`.
+- Geometric indicators (annotation `draw()` primitives) are recalculated over
+  the full OHLC history before a static plot draws them, so historical
+  annotations are not clipped by the last partial-bar recalculation.
+
+### Fixed
+- `TickData.to_klines()` docstring now documents the `'trade'` price_source
+  (was missing after it was added).
+
 ## [0.2.4]
 
 ### Changed

@@ -181,7 +181,13 @@ def ticks_to_klines(
           ('5m', '1h', etc.)
         include_partial (bool): If False (default), omits the last incomplete
           candle. If True, includes it with values computed so far.
-        price_source (str): 'price' uses price column, 'mid' uses (bid+ask)/2
+        price_source (str): 'price' uses the price column as-is (mixes real
+          trade prices with quote-only midpoints, if present); 'mid' uses
+          (bid+ask)/2 for every tick; 'trade' uses the price column but first
+          drops quote-only ticks (volume == 0), keeping only real trades. Use
+          'trade' when the price column may contain (bid+ask)/2 fallbacks from
+          normalize_ticks()/MT5 quote ticks and you need OHLC that always
+          lands on a real traded price (e.g. respecting tick_size).
         volume_source (str): 'volume' or 'volume_real'
 
     Returns:
@@ -189,7 +195,11 @@ def ticks_to_klines(
           ts, open, high, low, close, volume, turnover
 
         Turnover is computed as sum of (price x volume) per candle. Returns
-        empty [0 x 7] if input is empty or no closed candles exist.
+        empty [0 x 7] if input is empty or no closed candles exist. With
+        price_source='trade', candle boundaries are computed only from the
+        surviving trade ticks, so a bar interval with no trades in it (only
+        quotes) produces no candle for that interval (it is not synthesized
+        from quote midpoints).
 
     Raises:
         DataError: If price_source or volume_source is invalid
@@ -197,6 +207,7 @@ def ticks_to_klines(
     Example:
         klines = ticks_to_klines(ticks, 60000)
         klines_1m = ticks_to_klines(ticks, '1m')
+        klines_trades = ticks_to_klines(ticks, '1m', price_source='trade')
     """
     interval_ms = parse_timeframe(interval_ms)
 
@@ -207,16 +218,25 @@ def ticks_to_klines(
     t = normalize_ticks(np.asarray(ticks, dtype=np.float64))
 
     C = _TICK_COL
+
+    if price_source not in ("price", "mid", "trade"):
+        raise DataError(
+            f"Invalid price_source: {price_source!r}. "
+            f"Use 'price', 'mid' or 'trade'."
+        )
+
+    if price_source == "trade":
+        trade_mask = t[:, C["volume"]] > 0.0
+        t = t[trade_mask]
+        if len(t) == 0:
+            return empty
+
     ts_col = t[:, C["ts"]]
 
-    if price_source == "price":
-        px = t[:, C["price"]]
-    elif price_source == "mid":
+    if price_source == "mid":
         px = (t[:, C["bid"]] + t[:, C["ask"]]) / 2.0
-    else:
-        raise DataError(
-            f"Invalid price_source: {price_source!r}. Use 'price' or 'mid'."
-        )
+    else:  # 'price' or 'trade'
+        px = t[:, C["price"]]
 
     if volume_source == "volume":
         vol = t[:, C["volume"]]

@@ -56,7 +56,8 @@ class HHLL(Indicator, PivotIndicatorMixin):
     Implements PivotIndicatorMixin. Use as decorator in add_pattern_matcher():
 
         self.setup = self.add_pattern_matcher(
-            pivots  = [self.cpivot, self.hhll],
+            base_pivot=self.cpivot,
+            decorators=[self.hhll],
             pattern = Pattern([
                 PatternNode('H', {'hhll': 'HH'}, []),
                 PatternNode('L', {'hhll': 'HL'}, []),
@@ -69,6 +70,7 @@ class HHLL(Indicator, PivotIndicatorMixin):
 
     name     = "hhll"
     category = "structure"
+    source_cols = ("high", "low", "ts")
 
     use_partial = False
 

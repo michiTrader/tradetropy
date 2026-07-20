@@ -28,8 +28,8 @@ class Flow(Strategy):
 
 
 sesh = SeshCCXTLive('binance')            # public market data, no keys needed
-engine = LiveEngine.by_ticks(Flow(), sesh=sesh)
-engine.run()                              # event-driven: every trade is processed
+bt = LiveEngine.by_ticks(Flow(), sesh=sesh)
+bt.run()                                  # event-driven: every trade is processed
 ```
 
 Key properties:
@@ -93,6 +93,31 @@ guarantee. This is what makes `DeepTrades` backtestable. See
     `pip install tradetropy[hdf5]`). Because `.npz` is not appendable, an npz
     recording buffers to a small sidecar during the session and is finalized
     into the `.npz` file when the recorder stops.
+
+## Logging
+
+`self.log` (a lazy property on `Strategy`) gives every strategy a ready-made
+logger with trading-specific levels (`perf`, `signal`, `trading`, between
+`DEBUG`/`INFO` and `INFO`/`WARNING`):
+
+```python
+class MyStrategy(Strategy):
+    def on_data(self):
+        self.log.signal('bullish cross detected -> price=%.2f', price)
+        self.log.trading('BUY BTCUSDT 0.01 @ %.2f', fill_price)
+```
+
+By default the `{asctime}` column renders in UTC. Pass `display_tz` to
+`get_strategy_logger()` to present timestamps in another zone - useful to match
+your local session hours - without changing what is logged (backtest logs the
+data timestamp, live logs wall clock; only the presentation zone changes):
+
+```python
+from zoneinfo import ZoneInfo
+from tradetropy.logger import get_strategy_logger
+
+log = get_strategy_logger('MyStrategy', display_tz=ZoneInfo('America/New_York'))
+```
 
 ## Running multiple strategies (LivePool)
 
