@@ -1,6 +1,6 @@
 [project]
 name = "tradetropy"
-version = "0.3.1"
+version = "0.3.2"
 description = "A professional backtesting and live trading framework for algorithmic trading strategies with footprint analysis and market microstructure."
 readme = "README.md"
 license = "MIT"
@@ -89,7 +89,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["uv_build>=0.9.11,<0.10.0"]
+requires = ["uv_build>=0.9.11,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv]
