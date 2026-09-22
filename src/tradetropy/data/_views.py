@@ -268,11 +268,24 @@ class OhlcIndicatorView:
             # per tick. Closed bars are read from the full-history precompute.
             L = getattr(self._indicator, "min_periods",
                         getattr(self._indicator, "length", 1))
-            partial_value = float(store.partial_tick_candle(tick_idx)[self._src_col_idx])
-            closed_src = store.matrix[
-                max(0, n_closed - (L - 1)) : n_closed, self._src_col_idx
-            ]
-            window = np.append(closed_src, partial_value)
+            # Multi-source indicators (ATR/HLC, Stochastic/HLC,
+            # MarketStructure/HLC+ts, ...) carry a LIST of column indices, so
+            # the partial row must be stacked as a row, not appended as a
+            # scalar. Mirrors the tick-mode branch below.
+            if isinstance(self._src_col_idx, list):
+                partial_vals = store.partial_tick_candle(tick_idx)[self._src_col_idx]
+                closed_src = store.matrix[
+                    max(0, n_closed - (L - 1)) : n_closed
+                ][:, self._src_col_idx]
+                window = np.vstack([closed_src, partial_vals])
+            else:
+                partial_value = float(
+                    store.partial_tick_candle(tick_idx)[self._src_col_idx]
+                )
+                closed_src = store.matrix[
+                    max(0, n_closed - (L - 1)) : n_closed, self._src_col_idx
+                ]
+                window = np.append(closed_src, partial_value)
             bulk_result = self._indicator.calculate(window)
             if bulk_result.ndim > 1:
                 bulk_result = bulk_result.ravel()

@@ -41,6 +41,7 @@ from tradetropy.ta.structure import (
     EqualHL,
     NBS,
     HHLL,
+    MarketStructure,
     PivotDetector,
     _collapse_pivots_to_zigzag,
 )

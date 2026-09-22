@@ -95,6 +95,7 @@ _LAZY: dict[str, tuple[str, str]] = {
     "PivotHighLow":        ("tradetropy.ta", "PivotHighLow"),
     "SwingHL":             ("tradetropy.ta", "SwingHL"),
     "EqualHL":             ("tradetropy.ta", "EqualHL"),
+    "MarketStructure":     ("tradetropy.ta", "MarketStructure"),
     "FairValueGap":        ("tradetropy.ta", "FairValueGap"),
     "OrderBlock":          ("tradetropy.ta", "OrderBlock"),
     "MarketSessions":      ("tradetropy.ta", "MarketSessions"),
@@ -144,6 +145,7 @@ __all__ = [
     "PivotHighLow",
     "SwingHL",
     "EqualHL",
+    "MarketStructure",
     "FairValueGap",
     "OrderBlock",
     "MarketSessions",
@@ -201,6 +203,6 @@ if TYPE_CHECKING:  # pragma: no cover
         Indicator, IndicatorPlotConfig, SMA, EMA, MACD, RSI, ATR,
         BollingerBands, VolumeProfile, TickVolumeProfile, RollingVolumeProfile,
         VolumeNode, detect_volume_nodes, ZigZag, ConfirmedPivot, PivotHighLow,
-        SwingHL, EqualHL, FairValueGap, OrderBlock, MarketSessions,
+        SwingHL, EqualHL, MarketStructure, FairValueGap, OrderBlock, MarketSessions,
         SessionLevels, KillZones, LargeTrades,
     )

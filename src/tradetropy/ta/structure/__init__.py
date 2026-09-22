@@ -8,3 +8,4 @@ from tradetropy.ta.structure.zigzag import ZigZag
 from tradetropy.ta.structure.swings import SwingHL, EqualHL
 from tradetropy.ta.structure.nbs import NBS
 from tradetropy.ta.structure.hhll import HHLL
+from tradetropy.ta.structure.market_structure import MarketStructure
