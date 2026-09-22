@@ -71,22 +71,29 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
                stricter, more common SMC reading and produces fewer false
                breaks.
 
-    Access in on_data()  —  READ THE CLOSED BAR AT ``[-2]``
-    ───────────────────────────────────────────────────────
-    This detector is ``use_partial = False``: it only evaluates *closed*
-    candles, while the proxy window still carries the forming candle in its
-    last slot. The freshest structure event therefore lands on ``[-2]``, and
-    ``[-1]`` (the partial bar) is **always NaN**::
+    Access in on_data()  —  USE THE :meth:`event` HELPER
+    ───────────────────────────────────────────────────
+    The slot an event lands on is **not fixed**, so never hardcode an offset:
+
+    - **kline-driven** engines: the window's last slot is the forming bar, so
+      the event is at ``[-2]`` and ``[-1]`` is NaN.
+    - **tick-driven** engines (ticks / replay / live ticks): ``on_data()`` also
+      runs intrabar and the just-closed bar can be the last slot, so the event
+      shows at ``[-1]``.
+
+    Reading only ``[-1]`` silently misses every event under klines; reading
+    only ``[-2]`` misses them under ticks. The helper scans both::
 
         def on_data(self):
-            if not np.isnan(self.ms.choch_bull[-2]):
-                ...   # bearish -> bullish shift on the bar that just closed
+            tag = MarketStructure.event(self.ms)     # 'CHOCH-bull' | None
+            if tag == 'CHOCH-bull':
+                ...
 
-    Reading ``[-1]`` is the classic mistake here: it never fires, so the
-    strategy silently never trades. Use the :meth:`event` helper to stay
-    agnostic of the offset::
+            side = MarketStructure.bias(self.ms)     # 'bull' | 'bear' | None
 
-        tag = self.ms.event(self.ms)          # 'CHOCH-bull' | None
+    Under tick-driven engines ``on_data()`` fires repeatedly within a candle,
+    so the same event is reported several times - deduplicate on the event's
+    timestamp band before acting (see :meth:`event`).
 
     Bands available (all NaN on bars without that event):
         bos_bull, bos_bear, choch_bull, choch_bear      → broken level price
@@ -186,40 +193,58 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
     # ──────────────────────────────────────────────────────────────────────
     # READ HELPERS  (offset-safe access from on_data)
     # ──────────────────────────────────────────────────────────────────────
-    @staticmethod
-    def event(proxy, offset: int = -2) -> str | None:
-        """
-        Return the structure tag on the last CLOSED bar, or None.
+    _BAND_TAGS = (
+        ("bos_bull", "BOS-bull"),
+        ("bos_bear", "BOS-bear"),
+        ("choch_bull", "CHOCH-bull"),
+        ("choch_bear", "CHOCH-bear"),
+    )
 
-        Since this indicator ignores partial candles, the live window's last
-        slot is the forming bar and the event sits one slot earlier. This
-        helper hides that offset so a strategy never has to hardcode ``[-2]``
-        (and never silently reads the always-NaN ``[-1]``).
+    @classmethod
+    def event(cls, proxy) -> str | None:
+        """
+        Return the structure tag on the freshest evaluated bar, or None.
+
+        Why this helper exists: the slot the event lands on is **not fixed**.
+        The indicator is ``use_partial=False``, so it only ever evaluates
+        closed candles, but where that closed candle sits in the proxy window
+        depends on how the engine drives the strategy:
+
+        - **kline-driven** (``BacktestEngine.by_klines``, live klines): the
+          window's last slot is the *forming* bar, so the event is at ``[-2]``
+          and ``[-1]`` is NaN.
+        - **tick-driven** (``by_ticks``, replay, live ticks): ``on_data()``
+          also runs intrabar, and right at a bar close the just-closed bar can
+          still be the last slot, so the event shows at ``[-1]``.
+
+        Hardcoding either offset is therefore a bug: ``[-1]`` alone silently
+        misses every event in kline mode, ``[-2]`` alone misses events in tick
+        mode. This scans the last two slots (newest first) and returns the tag.
+
+        .. warning::
+            In tick-driven mode ``on_data()`` fires many times per candle, so
+            the same event is reported on consecutive calls. Deduplicate before
+            acting on it - the timestamp bands make that easy::
+
+                ts = self.ms.ts_choch_bull[-1]
+                if tag and ts != self._last_seen_ts:
+                    self._last_seen_ts = ts
+                    ...   # act once per event
 
         Args:
             proxy: The indicator proxy returned by ``add_indicator``.
-            offset (int): Bar to inspect; -2 (default) is the last closed bar.
 
         Returns:
             str | None: 'BOS-bull' | 'BOS-bear' | 'CHOCH-bull' | 'CHOCH-bear',
-                or None when the bar carries no structure event.
-
-        Example:
-            >>> tag = MarketStructure.event(self.ms)
-            >>> if tag == 'CHOCH-bull':
-            ...     ...
+                or None when no structure event is on the freshest bars.
         """
-        for band, tag in (
-            ("bos_bull", "BOS-bull"),
-            ("bos_bear", "BOS-bear"),
-            ("choch_bull", "CHOCH-bull"),
-            ("choch_bear", "CHOCH-bear"),
-        ):
-            series = getattr(proxy, band, None)
-            if series is None or len(series) < abs(offset):
-                continue
-            if not np.isnan(series[offset]):
-                return tag
+        for offset in (-1, -2):
+            for band, tag in cls._BAND_TAGS:
+                series = getattr(proxy, band, None)
+                if series is None or len(series) < abs(offset):
+                    continue
+                if not np.isnan(series[offset]):
+                    return tag
         return None
 
     @staticmethod
@@ -246,7 +271,7 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
         if probe is None:
             return None
         n = len(probe)
-        for off in range(2, min(lookback, n) + 1):
+        for off in range(1, min(lookback, n) + 1):
             for band, side in bands:
                 series = getattr(proxy, band, None)
                 if series is None or len(series) < off:
