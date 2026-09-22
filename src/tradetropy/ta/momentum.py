@@ -232,17 +232,50 @@ class Stochastic(Indicator):
         return self.k_period + self.k_smooth + self.d_smooth - 2
 
     def _sma(self, arr: np.ndarray, L: int) -> np.ndarray:
+        """
+        Rolling mean that tolerates a NaN warmup prefix.
+
+        A plain ``np.cumsum`` is unusable here: ``raw_k`` always starts with
+        ``k_period - 1`` NaN warmup values, and cumsum propagates the first
+        NaN to every later element - which made %K and %D NaN over the whole
+        series.
+
+        ``np.nancumsum`` is not the fix either: it treats NaN as 0, so a
+        window that only partially overlaps the warmup returns a number that
+        looks valid but is wrong (a 3-bar window over [NaN, NaN, 30] would
+        report 10.0 instead of NaN). Silent corruption is worse than NaN.
+
+        So the sum is accumulated over NaN-as-zero while a parallel counter
+        tracks how many real observations each window holds, and a value is
+        emitted only where the window is entirely finite.
+        """
         n = len(arr)
         out = np.full(n, np.nan, dtype=np.float64)
-        if n < L:
+        if n < L or L < 1:
             return out
-        cs = np.cumsum(arr)
-        out[L - 1:] = (cs[L - 1:] - np.concatenate(([0.0], cs[:-L]))) / L
+
+        valid = np.isfinite(arr)
+        filled = np.where(valid, arr, 0.0)
+
+        cs_sum = np.concatenate(([0.0], np.cumsum(filled)))
+        cs_cnt = np.concatenate(([0], np.cumsum(valid.astype(np.int64))))
+
+        win_sum = cs_sum[L:] - cs_sum[:-L]
+        win_cnt = cs_cnt[L:] - cs_cnt[:-L]
+
+        complete = win_cnt == L
+        window_mean = np.full(win_sum.shape, np.nan, dtype=np.float64)
+        window_mean[complete] = win_sum[complete] / L
+
+        out[L - 1:] = window_mean
         return out
 
     def calculate(self, source: np.ndarray) -> np.ndarray:
         n = len(source)
         out = np.full((2, n), np.nan, dtype=np.float64)
+        if n == 0:
+            return out
+
         high, low, close = source[:, 0], source[:, 1], source[:, 2]
         L = self.k_period
         raw_k = np.full(n, np.nan, dtype=np.float64)
@@ -2114,12 +2147,34 @@ class RVI(Indicator):
         return self.length + 3
 
     def _sma(self, arr: np.ndarray, L: int) -> np.ndarray:
+        """
+        Rolling mean over an input that carries a NaN warmup prefix.
+
+        Previously used ``np.nancumsum``, which avoids the all-NaN output of a
+        plain cumsum but treats NaN as 0: a window straddling the warmup
+        returned a real-looking number computed from fewer observations than
+        ``L`` (e.g. a 3-bar window over [NaN, NaN, 30] reported 10.0). A value
+        is now emitted only where the window is fully populated.
+        """
         n = len(arr)
         out = np.full(n, np.nan, dtype=np.float64)
-        if n < L:
+        if n < L or L < 1:
             return out
-        cs = np.nancumsum(arr)
-        out[L - 1:] = (cs[L - 1:] - np.concatenate(([0.0], cs[:-L]))) / L
+
+        valid = np.isfinite(arr)
+        filled = np.where(valid, arr, 0.0)
+
+        cs_sum = np.concatenate(([0.0], np.cumsum(filled)))
+        cs_cnt = np.concatenate(([0], np.cumsum(valid.astype(np.int64))))
+
+        win_sum = cs_sum[L:] - cs_sum[:-L]
+        win_cnt = cs_cnt[L:] - cs_cnt[:-L]
+
+        complete = win_cnt == L
+        window_mean = np.full(win_sum.shape, np.nan, dtype=np.float64)
+        window_mean[complete] = win_sum[complete] / L
+
+        out[L - 1:] = window_mean
         return out
 
     def _swma(self, arr: np.ndarray) -> np.ndarray:

@@ -74,19 +74,18 @@ class TestMultiSourceKlinePartial:
         hits = _run(lambda: ATR(14), lambda ind: _finite(ind))
         assert hits > 100, f"ATR produced only {hits} usable bars"
 
-    def test_stochastic_hlc_does_not_crash_on_klines(self):
+    def test_stochastic_hlc_readable_on_klines(self):
         """
         Stochastic also consumes (high, low, close), so it exercises the same
-        list-index path and must not raise.
+        list-index path.
 
-        Only the crash is asserted, not the values: Stochastic().calculate()
-        currently returns all-NaN even when called directly on clean synthetic
-        HLC data, which is a separate pre-existing bug in the indicator
-        itself - unrelated to this partial-window fix. Asserting finite values
-        here would hide that bug behind an unrelated failure.
+        This asserted only "does not crash" while Stochastic._sma was still
+        returning all-NaN (a separate bug, since fixed in
+        test_stochastic_nan_warmup.py). Now that the indicator produces real
+        values, the finite-value assertion is restored.
         """
-        hits = _run(lambda: Stochastic(), lambda ind: len(ind.k) > 0)
-        assert hits > 100, "Stochastic view was unreadable under klines"
+        hits = _run(lambda: Stochastic(), lambda ind: _finite(ind.k))
+        assert hits > 100, f"Stochastic produced only {hits} usable bars"
 
     def test_market_structure_readable_on_klines(self):
         """MarketStructure consumes (high, low, close, ts): 4 columns."""
