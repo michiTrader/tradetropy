@@ -1,0 +1,33 @@
+name: tests
+
+# Run the test suite on every push to main and on pull requests.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'pytest.ini'
+      - '.github/workflows/tests.yml'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # Install the base stack plus the extras whose connectors are exercised by
+      # the suite. The `mt5` extra is intentionally omitted: MetaTrader5 is a
+      # Windows-only package, and the MT5 tests cover the pure indicators (no
+      # broker package required). The MT5 connector imports MetaTrader5 lazily.
+      - name: Sync dependencies
+        run: uv sync --extra ccxt --extra bybit --extra parquet
+
+      - name: Run tests
+        run: uv run pytest
