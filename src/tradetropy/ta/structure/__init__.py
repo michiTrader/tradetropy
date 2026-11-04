@@ -1,6 +1,7 @@
 from tradetropy.ta.structure.pivots import (
     PivotHighLow,
     ConfirmedPivot,
+    ConfirmedPivotSeries,
     PivotDetector,
     _collapse_pivots_to_zigzag,
 )

@@ -52,6 +52,7 @@ CLAUDE.md
 .claude
 .kiro
 .mimocode
+.arxi
 
 # Node stray artifacts (this is a Python project, not JS)
 package.json

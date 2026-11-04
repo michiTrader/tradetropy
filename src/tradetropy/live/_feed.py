@@ -88,12 +88,12 @@ def _strategy_ready(self) -> bool:
         return (self._historical_candles + max(0, live_candles) + has_partial) >= warmup
 
     else:
-        live_candles = _count_closed_candles_rings(self) - self._historical_candles
-        has_partial = any(
-            op._ohlc_ring._ts_current_candle >= 0
-            for op in self.strategy._ohlc_proxies
-            if op._ohlc_ring is not None
-        )
+        # kline mode: usar el proxy de intervalo MÁS FINO (el que se dibuja en el
+        # chart), no el min sobre todos los proxies: con múltiples intervalos
+        # (1m + 5m, ...) el proxy mayor ahoga el contador y on_data() nunca arranca.
+        fine = min(self.strategy._ohlc_proxies, key=lambda op: op.interval_ms)
+        live_candles = fine._ohlc_ring._n_closed - self._historical_candles
+        has_partial = fine._ohlc_ring._ts_current_candle >= 0
         return (self._historical_candles + max(0, live_candles) + has_partial) >= warmup
 
 
@@ -493,6 +493,8 @@ def _process_tick(self, symbol: str, tick: np.ndarray):
         return
 
     try:
+        # use_tool()/order helpers refuse to run outside on_data(); the flag has
+        # to be raised here (the backtest loops do the same).
         self.strategy._in_on_data = True
         self.strategy.on_data()
     finally:
@@ -506,7 +508,7 @@ def _process_tick(self, symbol: str, tick: np.ndarray):
                     self._flush_tick_proxy(tp)
 
 
-def _process_bar(self, symbol: str, kline: np.ndarray):
+def _process_bar(self, symbol: str, kline: np.ndarray, aggregate: bool = False):
     """
     Process a candle (kline) in kline mode.
 
@@ -516,10 +518,17 @@ def _process_bar(self, symbol: str, kline: np.ndarray):
     Args:
         symbol: Trading symbol.
         kline: Kline array [ts_ms, open, high, low, close, volume, turnover].
+        aggregate: Passed through to ``OhlcRing.apply_kline``. False (default,
+            live streaming) replaces the forming candle with the latest OHLC
+            snapshot; True (replay draining native rows) merges finer rows into
+            the coarser bucket (high=max, low=min, close=last, volume=sum).
     """
     ts_ms   = int(kline[0])
+    open_   = float(kline[1])
+    high    = float(kline[2])
+    low     = float(kline[3])
     close   = float(kline[4])
-    volume = float(kline[5])
+    volume  = float(kline[5])
 
     if self.sesh is not None:
         self.sesh._ultimo_ts = ts_ms
@@ -533,7 +542,8 @@ def _process_bar(self, symbol: str, kline: np.ndarray):
         )
         if bar_closed:
             _any_bar_closed = True
-        ohlc_ring.process_tick(ts_ms, close, volume)
+        ohlc_ring.apply_kline(ts_ms, open_, high, low, close, volume,
+                              aggregate=aggregate)
 
         if bar_closed:
             _update_ohlc_indicators_on_close(self, symbol, ohlc_ring)

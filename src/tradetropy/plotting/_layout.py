@@ -434,7 +434,26 @@ def _configure_derender(figs: list, entries: list, enabled: bool = True) -> None
         fig.js_on_event(MouseWheel, wheel_cb)
 
 
-def _configure_legends(figs: list, theme: dict) -> None:
+def _configure_legends(figs: list, theme: dict, placement: str = "outside_top") -> None:
+    """
+    Style every figure's legend.
+
+    Args:
+        figs (list): All panels of the chart.
+        theme (dict): Plot theme (text / background colours).
+        placement (str): Where the legend goes.
+
+            "outside_top" (default) - one horizontal row on its own strip
+                ABOVE the plot frame (``fig.add_layout(leg, "above")``). The
+                drawing area starts below it, so it never covers a candle and
+                the frame is not shrunk. Click still toggles each layer.
+            "inside" - the old behaviour: vertical, top-left inside the frame.
+                Compact, but with many indicators it covers the first candles.
+            "none" - legend hidden (click-to-toggle unavailable).
+
+    Only ``fig.legend[0]`` is touched: indicator own-panels keep their own
+    Legend (or none), otherwise the top strip would appear twice.
+    """
     for fig in figs:
         if not getattr(fig, "legend", None):
             continue
@@ -442,21 +461,45 @@ def _configure_legends(figs: list, theme: dict) -> None:
             leg = fig.legend[0]
         except (IndexError, TypeError):
             continue
-        leg.visible              = True
-        leg.location             = "top_left"
-        leg.orientation          = "vertical"
-        leg.click_policy         = "hide"
-        leg.padding              = 3
-        leg.spacing              = 0
-        leg.margin               = 1
-        leg.label_text_font_size = "8pt"
-        leg.label_text_font      = "monospace"
+        leg.click_policy             = "hide"
+        leg.label_text_font          = "monospace"
         leg.label_text_color         = theme["text"]
         leg.background_fill_color    = theme["bg_border"]
         leg.background_fill_alpha    = 0.80
         leg.border_line_color        = theme["grid"]
         leg.border_line_alpha        = 0.5
         leg.border_line_width        = 1
+
+        if placement == "none":
+            leg.visible = False
+            continue
+
+        leg.visible = True
+        if placement == "inside":
+            leg.location             = "top_left"
+            leg.orientation          = "vertical"
+            leg.padding              = 3
+            leg.spacing              = 0
+            leg.margin               = 1
+            leg.label_text_font_size = "8pt"
+            continue
+
+        # -- "outside_top": single row, outside the frame --------------------
+        leg.orientation          = "horizontal"
+        leg.location             = "center"
+        leg.label_text_font_size = "10pt"
+        leg.spacing              = 18   # 0 pasted the entries into one word
+        leg.padding              = 6
+        leg.margin               = 8
+        leg.label_standoff       = 6    # gap between the glyph and its label
+        try:
+            # ``location`` only accepts positions INSIDE the frame; add_layout
+            # is what moves the legend to a strip of its own on top. Calling it
+            # twice for the same side is a no-op in Bokeh, so re-configuring is
+            # safe.
+            fig.add_layout(leg, "above")
+        except Exception:                                  # pragma: no cover
+            pass
 
 
 def _configure_crosshair(
@@ -655,8 +698,39 @@ def _build_theme_css_div(theme: dict):
     )
 
 
+def _write_html(full_layout, theme: dict, path: str, title: str) -> None:
+    """
+    Serialise the layout to ``path`` WITHOUT opening the browser, painting the
+    whole page in the theme background.
+
+    ``output_file()`` + ``show()`` does two things we do not want when writing
+    a report in a loop: it opens a tab in the user's browser for every call, and
+    the page background stays white outside the layout. The theme CSS is
+    injected as a ``Div`` INSIDE the document, so the area the layout does not
+    cover (viewport taller than the chart, right/bottom margins) is painted by
+    the browser itself. Bokeh also forces ``html,body{height:100%}``, so as soon
+    as the content is taller than the window, the overflow sits outside the
+    body's box and gets the default white.
+
+    The fix is the ``html,body{background:...}`` rule injected in ``<head>``:
+    it applies before the first frame, so there is never a white flash. A
+    ``min-height:100vh`` on the outer column keeps the theme background covering
+    the viewport even for a short chart.
+    """
+    from bokeh.embed import file_html
+    from bokeh.resources import CDN
+
+    style = (
+        f"<style>html,body{{background:{theme['bg']}!important;margin:0;"
+        f"padding:0}}::-webkit-scrollbar{{width:0;height:0}}</style>"
+    )
+    html = file_html(full_layout, CDN, title)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(html.replace("</head>", style + "</head>", 1))
+
+
 def _show_layout(layout, config: PlotConfig, theme: dict) -> None:
-    from bokeh.plotting import show, output_notebook, output_file
+    from bokeh.plotting import show, output_notebook
     from bokeh.io import reset_output
     from bokeh.layouts import column
 
@@ -667,15 +741,15 @@ def _show_layout(layout, config: PlotConfig, theme: dict) -> None:
     full_layout = column(
         css_div, layout,
         sizing_mode="stretch_width",
-        styles={"background-color": theme["bg"], "padding": "0", "margin": "0"},
+        styles={"background-color": theme["bg"], "padding": "0", "margin": "0",
+                "min-height": "100vh"},
     )
 
     if config.output == "notebook":
         output_notebook(hide_banner=True)
         show(full_layout)
     elif config.output == "file":
-        output_file(config.filename, title=config.title)
-        show(full_layout)
+        _write_html(full_layout, theme, config.filename, config.title)
     elif config.output == "server":
         _serve_layout(full_layout, config)
     else:

@@ -4,6 +4,105 @@ All notable changes to Tradetropy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.2] - 2026-11-03
+
+### Added
+- `tradetropy.ta.order_blocks`: SMC order-block detectors over plain NumPy OHLC -
+  `find_order_blocks()` plus the `SmcOrderBlock` indicator, `blocks_to_rects()`
+  and `pack_active_bands()` for plotting. One detector parameterised on three
+  orthogonal axes (anchor / zone / mitigation) with optional validation
+  filters; every `Block` carries `confirmed_idx`, the bar at which it first
+  becomes knowable from *closed* bars only, so no detector looks ahead and
+  backtest/live stay in parity.
+- `tradetropy.ta.ConfirmedPivotSeries`: `ConfirmedPivot` plus a causal query API
+  (`count_upto()`, `pivots_upto()`, `pivots_from()`) returning
+  `(conf_ts, kind, price, real_ts)` entries. The store is append-only and the
+  caller keeps its own cursor, so folding pivots bar by bar costs
+  O(#new pivots) - usually zero - instead of re-slicing the four band arrays
+  (~75 us per read on a 6 300-bar window).
+- `LiveOhlcRing.apply_kline()`: feed a full OHLC candle into the ring (kline
+  feeds) instead of collapsing it through `process_tick()`.
+  `aggregate=False` keeps the live snapshot semantics of a forming candle;
+  `aggregate=True` folds finer rows into the subscribed bucket
+  (high=max, low=min, close=last, volume=sum).
+- `KlineBroker.sltp_ambiguous`: how many bars hit the SL and the TP of the same
+  position, i.e. how much of the result depends on the tie-break guess (see
+  Changed).
+- Replay: `_klines_to_klines()` aggregates klines -> klines (open=first,
+  high=max, low=min, close=last, volume=sum), and the playback kline loop is
+  now event-driven: it waits on a controller step and drains only the native
+  rows in `(last_idx, cursor]`, each with its full OHLC.
+
+### Changed
+- **Legend placement:** the backtest/live legend now sits on its own strip
+  **above** the price frame (`legend_placement="outside_top"`, the new default),
+  horizontal and with air between entries, instead of a vertical stack inside the
+  top-left corner covering the first candles. Click still toggles each layer.
+  `legend_placement="inside"` brings the old behaviour back and `"none"` hides it
+  entirely. New `PlotConfig.legend_placement` and `bt.plot(legend_placement=)`.
+- **`output="file"` no longer calls `show()`**: the HTML is serialised with
+  `file_html`, so writing a chart never opens a browser tab. The page background
+  is also painted in the theme colour via an `html,body{background:...}` rule in
+  the `<head>`; without it the area the layout does not cover was rendered white
+  by the browser on any dark-theme report.
+- New `PlotConfig.volume_alpha` (and `bt.plot(volume_alpha=)`): opacity of the
+  volume bars. `None` (default) keeps the theme value; `~0.12` reads as context
+  instead of hiding the candles in wide screenshots.
+- **Breaking (default flipped):** `sltp_tiebreak` now defaults to `"worst"` in
+  `KlineBroker`, `SeshSimulatorBase` and `SeshMT5Sim` (kline feeds only). When a
+  single bar touches both the SL and the TP of a position, the stop is assumed
+  to have fired first, so no win is booked that the OHLC data cannot prove. The
+  previous default, `"open"` (level closest to the bar open wins), is still
+  available but is now opt-in; backtests that relied on it will change. Every
+  ambiguous bar is counted in `broker.sltp_ambiguous`, so the exposure is
+  measurable before and after.
+
+### Fixed
+- **MT5 live could not list orders**: `SeshMT5Live.orders()` and
+  `order_history()` imported `_ORDER_TYPE_STR_MAP` from `tradetropy.sim_sesh`, a
+  module that no longer exists, so every call raised `ModuleNotFoundError` (and
+  a live strategy calls `orders()` on every bar). The string -> `OrderType` map
+  now lives in the connector.
+- **`SeshMT5Sim` profit and account info**: both read `cfg.tick_step`, an
+  attribute `SymbolConfig` does not have (`tick_step` is only the dict key of
+  `get_account_info()`), so they raised `AttributeError`. They now use
+  `cfg.tick_size`.
+- **Kline replay plotted a flat chart**: history and visible rows were
+  re-bucketed through `_ticks_to_klines()`, which reads a tick price column that
+  a kline row does not have, so every candle came out
+  `open == high == low == close`. Kline feeds now go through
+  `_klines_to_klines()`, which keeps native timestamps untouched when the
+  requested interval already matches the data.
+- **Replay chart opened empty**: `populate_history()` skipped the initial load
+  whenever the dataset was older than 30 minutes by the wall clock - always
+  true for a replay of historical data. A playback session now passes
+  `max_age_minutes=0`.
+- **Kline replay flickered and doubled the volume**: the old loop busy-polled
+  `_fetch_last_kline` and re-emitted the same candle every poll, re-summing its
+  volume. Each native row is now fed exactly once, driven by the replay cursor.
+- **Live warmup never completed with several intervals**: the readiness counter
+  took the *coarsest* subscribed interval, so a `1m` + `5m` strategy never
+  reached its warmup and `on_data()` never ran. It now tracks the finest proxy.
+- **Overlay autoscale flattened the candles**: a band holding timestamps
+  (epoch ms, e.g. ZigZag's `[price, ts]` output) was fed to the price Y-range
+  autoscale. Timestamp bands are now excluded from it.
+- **Play/pause toggle out of sync**: the widget was always created in the
+  "playing" state, so a replay that opens paused showed a play glyph whose first
+  click only paused (no visible effect). Label, active state and styling are now
+  seeded from `controller.paused`.
+- **Sequence-valued `line_width`** (per-point widths) was passed straight to the
+  glyph, which Bokeh rejects when a `source` is given; it is now moved into a
+  `line_width` column of the `ColumnDataSource`. `Labels` are also handled
+  before the width lookup, so a label primitive never picks up a line width.
+- `read_klines()` accepted `avg_spread` but never wrote it into the
+  `SymbolConfig`, so every kline backtest ran with zero spread unless the config
+  was patched by hand.
+
+## [0.3.1] - 2026-09-22
+
+The 0.3.x line made it to PyPI as 0.3.1 (0.3.0 was skipped); its contents are
+the 0.3.0 notes below, plus the removal of the unused `keyboard` dependency.
+
 ## [0.3.0] - 2026-07-28
 
 ### Added

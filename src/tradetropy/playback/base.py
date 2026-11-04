@@ -1096,51 +1096,94 @@ class BaseEngine(LiveEngine):
 
     def _loop_kline(self, symbols: list) -> None:
         """
-        Kline feed loop without _topup_ohlc_rings.
+        Event-driven kline feed loop (no _topup_ohlc_rings).
 
-        Same as LiveEngine._loop_kline() but without topup and with automatic
-        stop when replay finishes. No side effects on ring: historical data
-        is replayed progressively, topup not applicable.
+        Mirrors ``_loop_tick``: instead of busy-polling ``_fetch_last_kline``
+        (which floods the chart with redundant re-emissions of the same candle,
+        causing flicker + control lag and re-summing volume), it waits on a
+        step signal from the controller and, on each wakeup, drains only the
+        NEW native kline rows in (last_idx, cursor] once. Each row carries its
+        full OHLC into the ring via ``_process_bar(aggregate=True)`` so candles
+        keep their real high/low/close instead of collapsing to the close.
+
+        On finish the loop idles (does not tear down) so Restart/Back can rewind
+        and resume. No side effects on the ring beyond the drained rows.
         """
+        import threading
         import time
 
-        intervalos = {}
-        for op in self.strategy._ohlc_proxies:
-            if op.symbol not in intervalos:
-                intervalos[op.symbol] = op.interval_ms
+        self._resync_chart_sources()
 
-        while not self._stop_event.is_set():
-            # Drain UI commands on the engine thread first.
-            with self._rebuild_lock:
-                self._drain_commands()
+        # First native row to emit per symbol = one past the reserved warmup
+        # (which is already loaded into the ring as closed candles).
+        self._replay_ultimo_idx = {
+            sym: self._sesh._warmup_ticks.get(sym, 0) - 1
+            for sym in symbols
+        }
 
-            # Idle (do not tear down) when the replay reached the end so a
-            # Restart/Back rewind can resume playback.
-            if getattr(self._sesh, "finished", False):
-                time.sleep(0.05)
-                continue
+        _kline_event = threading.Event()
+        _sesh = self._sesh
+        _original_step = _sesh.step
 
-            with self._rebuild_lock:
-                for sym in symbols:
-                    if self._stop_event.is_set():
-                        break
-                    intervalo = intervalos.get(sym)
-                    if intervalo is None:
-                        continue
-                    try:
-                        kline = self.sesh._fetch_last_kline(sym, intervalo)
-                        if kline is None:
-                            continue
-                        self.on_kline(sym, kline)
-                    except Exception as exc:
-                        import traceback
-                        warnings.warn(
-                            f"{type(self).__name__} kline loop error ({sym}): {exc}\n"
-                            f"{traceback.format_exc()}"
-                        )
-                        time.sleep(0.05)
+        def _step_con_signal(symbol=None):
+            _original_step(symbol)
+            _kline_event.set()
 
-            time.sleep(self._poll_interval)
+        _sesh.step = _step_con_signal
+
+        try:
+            while not self._stop_event.is_set():
+                # Wake on a controller step; also wake periodically so paused
+                # UI commands (orders, rewind) still drain promptly.
+                _kline_event.wait(timeout=0.1)
+
+                with self._rebuild_lock:
+                    self._drain_commands()
+
+                if not _kline_event.is_set():
+                    continue
+                _kline_event.clear()
+
+                with self._rebuild_lock:
+                    for sym in symbols:
+                        if self._stop_event.is_set():
+                            break
+                        try:
+                            self._drain_pending_klines(sym)
+                        except Exception as exc:
+                            import traceback
+                            warnings.warn(
+                                f"{type(self).__name__} kline loop error "
+                                f"({sym}): {exc}\n{traceback.format_exc()}"
+                            )
+                            time.sleep(0.05)
+        finally:
+            _sesh.step = _original_step
+
+    def _drain_pending_klines(self, sym: str) -> None:
+        """
+        Feed every native kline row in (last_idx, cursor] exactly once.
+
+        Native rows are the dataset candles bound by ``by_klines``; each is fed
+        with its full OHLC and aggregated into the subscribed interval by the
+        ring (so a coarser subscribed timeframe folds several native candles
+        into one bucket). Emitting each row only once — driven by the cursor —
+        is what removes the busy-loop flicker/lag of the old polling version.
+        """
+        from tradetropy.live._feed import _process_bar
+
+        ds = self._sesh._datasets.get(sym)
+        if ds is None or len(ds) == 0:
+            return
+        cur = self._sesh._cursor.get(sym, -1)
+        last = self._replay_ultimo_idx.get(
+            sym, self._sesh._warmup_ticks.get(sym, 0) - 1)
+        if cur <= last:
+            return
+        hi = min(cur, len(ds) - 1)
+        for i in range(last + 1, hi + 1):
+            _process_bar(self, sym, ds[i], aggregate=True)
+        self._replay_ultimo_idx[sym] = hi
 
     # =========================================================================
     # TOPUP -- no-op in playback

@@ -411,55 +411,29 @@ def _merge_extra(data: dict, plist: list) -> None:
 
 
 def _create_glyph(fig, kind, src, proto, legend: str | None, theme: dict | None) -> None:
-    """
-    Create the Bokeh glyph for one primitive kind and wire its HoverTool.
-
-    ``legend`` is the legend label for the group, or None to create the glyph
-    without a legend entry (own-panel indicators that show no legend).
-    """
     from bokeh.models import HoverTool
 
     legend_kw = {"legend_label": legend} if legend else {}
 
+    # If the proto width/line_width is a sequence, put it in the source
+    # as a column so Bokeh accepts it when a 'source' is supplied.
+    if kind in (HLines, Segments):
+        _width_param = getattr(proto, "width", None)
+    elif kind is Labels or not hasattr(proto, "line_width"):
+        # HBars has no line_width (its edges use fill_color) - nothing to pass.
+        _width_param = None
+    else:
+        _width_param = proto.line_width
+    if isinstance(_width_param, (list, np.ndarray)):
+        src.data["line_width"] = np.asarray(_width_param, dtype=np.float64)
+        width_ref = "line_width"
+    elif isinstance(_width_param, (int, float)) or _width_param is None:
+        width_ref = _width_param
+    else:
+        width_ref = str(_width_param)
+
     glyph = None
-    if kind is HLines:
-        glyph = fig.segment(
-            x0="x0", y0="y", x1="x1", y1="y", source=src,
-            line_color="color", line_alpha="alpha",
-            line_width=proto.width, line_dash=proto.dash,
-            **legend_kw,
-        )
-    elif kind is Segments:
-        glyph = fig.segment(
-            x0="x0", y0="y0", x1="x1", y1="y1", source=src,
-            line_color="color", line_alpha="alpha",
-            line_width=proto.width, line_dash=proto.dash,
-            **legend_kw,
-        )
-    elif kind is Points:
-        glyph = fig.scatter(
-            x="x", y="y", source=src, size="size", marker=proto.marker,
-            fill_color="fill_color", fill_alpha="fill_alpha",
-            line_color="color", line_alpha="alpha",
-            line_width=proto.line_width,
-            **legend_kw,
-        )
-    elif kind is HBars:
-        glyph = fig.hbar(
-            y="y", height="height", left="left", right="right", source=src,
-            fill_color="color", line_color="color",
-            fill_alpha="alpha", line_alpha=0.0,
-            **legend_kw,
-        )
-    elif kind is Rects:
-        glyph = fig.quad(
-            left="left", right="right", bottom="bottom", top="top", source=src,
-            fill_color="fill", fill_alpha="fill_alpha",
-            line_color="line", line_alpha="line_alpha",
-            line_width=proto.line_width,
-            **legend_kw,
-        )
-    elif kind is Labels:
+    if kind is Labels:
         from bokeh.models import LabelSet
         labels = LabelSet(
             x="x", y="y", text="text", source=src,
@@ -470,7 +444,34 @@ def _create_glyph(fig, kind, src, proto, legend: str | None, theme: dict | None)
         )
         fig.add_layout(labels)
         return labels
+    elif kind is HLines:
+        glyph = fig.segment(
+            x0="x0", y0="y", x1="x1", y1="y", source=src,
+            line_color="color", line_alpha="alpha", line_width=width_ref,
+            line_dash=proto.dash, **legend_kw)
+    elif kind is Segments:
+        glyph = fig.segment(
+            x0="x0", y0="y0", x1="x1", y1="y1", source=src,
+            line_color="color", line_alpha="alpha", line_width=width_ref,
+            line_dash=proto.dash, **legend_kw)
+    elif kind is Points:
+        glyph = fig.scatter(
+            x="x", y="y", source=src, size="size", marker=proto.marker,
+            fill_color="fill_color", fill_alpha="fill_alpha",
+            line_color="color", line_alpha="alpha", line_width=width_ref,
+            **legend_kw)
+    elif kind is HBars:
+        glyph = fig.hbar(
+            y="y", height="height", left="left", right="right", source=src,
+            fill_color="color", line_color="color", fill_alpha="alpha",
+            line_alpha=0.0, **legend_kw)
+    elif kind is Rects:
+        glyph = fig.quad(
+            left="left", right="right", bottom="bottom", top="top", source=src,
+            fill_color="fill", fill_alpha="fill_alpha", line_color="line",
+            line_alpha="line_alpha", line_width=width_ref, **legend_kw)
 
     if glyph is not None and getattr(proto, "hover", None):
-        fig.add_tools(HoverTool(tooltips=list(proto.hover), mode="mouse", renderers=[glyph]))
+        fig.add_tools(HoverTool(tooltips=list(proto.hover), mode="mouse",
+                                renderers=[glyph]))
     return glyph

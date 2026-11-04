@@ -203,7 +203,8 @@ def render_volume(fig, source, theme: dict, config: PlotConfig, interval_ms: int
         fill_color=cmap,
         line_color=cmap,
         line_width=0,
-        alpha=theme["volume_alpha"],
+        alpha=(config.volume_alpha if config.volume_alpha is not None
+               else theme["volume_alpha"]),
         y_range_name="vol",
         legend_label="Volume",
     )

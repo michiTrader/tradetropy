@@ -545,13 +545,20 @@ def build_playback_controls(
         bg="#374151", width="44px", color="#9CA3AF",
     ))
 
+    # The widget must mirror the controller's CURRENT state, not assume it
+    # starts playing. A replay that opens paused (engine._ctrl.pause() before
+    # chart.start()) would otherwise show the ► of a playing replay: the first
+    # click sets active=True -> pause(), i.e. it does nothing visible, and the
+    # user has to click twice to actually start. Seeding active/label/styles
+    # from controller.paused makes the very first click do what the glyph says.
+    _paused_now = bool(controller.paused)
     toggle = Toggle(
-        label=_GLYPH_PLAY,
-        active=False,
+        label=_GLYPH_PAUSE if _paused_now else _GLYPH_PLAY,
+        active=_paused_now,
         width=44,
         height=24,
         button_type="light",
-        stylesheets=[_play_css_inactive],
+        stylesheets=[_play_css_active if _paused_now else _play_css_inactive],
     )
 
     # -- Glyph button CSS (square nav buttons) ---------------------------------

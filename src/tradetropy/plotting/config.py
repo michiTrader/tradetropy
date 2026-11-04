@@ -144,6 +144,16 @@ class PlotConfig:
                            segments, which renders fastest with
                            output_backend="webgl".
     plot_volume          : show volume bars in the OHLC panel
+    volume_alpha         : opacity of the volume bars (None = theme default,
+                           usually 0.30). Use ~0.12 in wide screenshots so the
+                           volume reads as context instead of hiding the candles.
+    legend_placement     : where the click-to-toggle legend sits.
+                           "outside_top" (default) - one horizontal row on its
+                           own strip above the price frame; it never covers a
+                           candle and the drawing area starts below it.
+                           "inside" - the old vertical, top-left legend inside
+                           the frame (compact, but covers the first candles).
+                           "none" - no legend (click-to-toggle unavailable).
     plot_footprint       : show footprint (requires FpProxy in strategy)
     plot_volume_profile  : show Volume Profile bar histogram
     show_price_tag       : DEPRECATED, removed. The floating price box that
@@ -278,6 +288,8 @@ class PlotConfig:
     plot_trades: bool = True
     ohlc_style: Literal["candle", "bar"] = "candle"
     plot_volume: bool = True
+    volume_alpha: float | None = None
+    legend_placement: Literal["outside_top", "inside", "none"] = "outside_top"
     plot_footprint: bool = True
     plot_volume_profile: bool = True
     show_price_tag: bool = False  # DEPRECATED: accepted, ignored, warns.

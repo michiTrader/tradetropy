@@ -36,6 +36,7 @@ from tradetropy.ta._volume_profile import VolumeNode, detect_volume_nodes
 from tradetropy.ta.structure import (
     PivotHighLow,
     ConfirmedPivot,
+    ConfirmedPivotSeries,
     ZigZag,
     SwingHL,
     EqualHL,
@@ -76,4 +77,12 @@ from tradetropy.ta.order_flow import (
     EVENT_LIQUIDITY_GRAB,
     DEEP_TRADE_LABELS,
     deep_trade_class_name,
+)
+from tradetropy.ta.order_blocks import (
+    Block,
+    Pivot,
+    find_order_blocks,
+    SmcOrderBlock,
+    blocks_to_rects,
+    pack_active_bands,
 )

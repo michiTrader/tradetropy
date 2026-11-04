@@ -1355,6 +1355,99 @@ class TestOnTick:
         assert tick_broker.account_info().balance == pytest.approx(10_016.35, abs=0.01)
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# TESTS: INTRABAR SL+TP AMBIGUITY (sltp_tiebreak)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.unit
+class TestSltpTiebreak:
+    """One bar touching BOTH levels. OHLC cannot say which came first, so the
+    broker must pick a policy explicitly instead of silently guessing."""
+
+    @staticmethod
+    def _broker(policy: str):
+        b = KlineBroker(
+            initial_balance=10_000.0,
+            commission=0.0,
+            use_spread=False,
+            trade_on_close=True,
+            position_mode=PositionMode.POSITION_MODE_NETTING,
+            sltp_tiebreak=policy,
+        )
+        b.add_symbol(SymbolConfig(
+            name="MES", tick_size=0.25, tick_value=1.25, contract_size=1,
+            digits=2, avg_spread=0.0,
+        ))
+        return b
+
+    @staticmethod
+    def _run(policy: str):
+        """Buy at 6920 with SL 6910 / TP 6930; next bar opens at 6928 and
+        spans 6926-6932, i.e. it touches the TP (6930) AND the low comes back
+        to 6909, touching the SL. TP is much closer to the bar open (1 tick)
+        than the SL (18 ticks)."""
+        b = TestSltpTiebreak._broker(policy)
+        feed_bars(b, [Bar("2026-02-11 10:00:00", 6920.00, 6920.00, 6920.00, 6920.00)])
+        buy(b, volume=1, tp=6930.00, sl=6910.00)
+        feed_bars(b, [Bar("2026-02-11 10:01:00", 6928.00, 6932.00, 6909.00, 6911.00)])
+        return b
+
+    def test_open_policy_takes_the_level_closest_to_the_open(self):
+        b = self._run("open")
+        deals = b.get_deal_history("MES")
+        assert "[tp" in deals[-1].comment.lower()
+        assert b.sltp_ambiguous == 1
+
+    def test_worst_policy_always_takes_the_stop(self):
+        b = self._run("worst")
+        deals = b.get_deal_history("MES")
+        assert "[sl" in deals[-1].comment.lower()
+        assert b.sltp_ambiguous == 1
+
+    def test_worst_policy_is_the_pessimistic_side_of_open(self):
+        peor = self._run("worst").account_info().balance
+        mejor = self._run("open").account_info().balance
+        assert peor < mejor
+
+    def test_unambiguous_bar_is_unaffected_by_the_policy(self):
+        balances = []
+        for policy in ("open", "worst"):
+            b = self._broker(policy)
+            feed_bars(b, [Bar("2026-02-11 10:00:00", 6920.00, 6920.00, 6920.00, 6920.00)])
+            buy(b, volume=1, tp=6930.00, sl=6910.00)
+            # Only the TP is touched; the low never reaches 6910.
+            feed_bars(b, [Bar("2026-02-11 10:01:00", 6925.00, 6931.00, 6924.00, 6930.00)])
+            balances.append(b.account_info().balance)
+            assert b.sltp_ambiguous == 0
+        assert balances[0] == pytest.approx(balances[1])
+
+    def test_invalid_policy_is_rejected(self):
+        with pytest.raises(ValueError, match="sltp_tiebreak"):
+            self._broker("maybe")
+
+    def test_default_policy_is_worst(self):
+        """The default must be the pessimistic side: a bar that touches both
+        levels may never be booked as a win, because OHLC cannot prove it."""
+        b = KlineBroker(
+            initial_balance=10_000.0,
+            commission=0.0,
+            use_spread=False,
+            trade_on_close=True,
+            position_mode=PositionMode.POSITION_MODE_NETTING,
+        )
+        b.add_symbol(SymbolConfig(
+            name="MES", tick_size=0.25, tick_value=1.25, contract_size=1,
+            digits=2, avg_spread=0.0,
+        ))
+        assert b.sltp_tiebreak == "worst"
+        feed_bars(b, [Bar("2026-02-11 10:00:00", 6920.00, 6920.00, 6920.00, 6920.00)])
+        buy(b, volume=1, tp=6930.00, sl=6910.00)
+        feed_bars(b, [Bar("2026-02-11 10:01:00", 6928.00, 6932.00, 6909.00, 6911.00)])
+        assert "[sl" in b.get_deal_history("MES")[-1].comment.lower()
+        assert b.sltp_ambiguous == 1
+
+
 # if __name__ == "__main__":
 #     pytest.main([__file__, "-v", "--tb=short"])
 

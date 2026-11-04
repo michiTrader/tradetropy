@@ -524,6 +524,8 @@ class BacktestEngine(_StoreBuilderMixin):
         footer_text: str | None = None,
         superimpose: bool | str = False,
         derender_on_pan: bool = True,
+        volume_alpha: float | None = None,
+        legend_placement: str = "outside_top",
     ) -> None:
         '''
         Generate interactive backtest chart.
@@ -583,11 +585,20 @@ class BacktestEngine(_StoreBuilderMixin):
                 (scatter markers, text labels) while dragging/wheel-zooming,
                 restoring them once the interaction settles. Default True;
                 set to False to disable the whole mechanism.
+            volume_alpha (float): Opacity of the volume bars. None (default)
+                uses the theme value; ~0.12 keeps the volume as context
+                instead of hiding the candles.
+            legend_placement (str): Where the click-to-toggle legend sits.
+                'outside_top' (default) - one horizontal row on its own strip
+                above the price frame, so it never covers a candle.
+                'inside' - vertical legend inside the frame, top-left (old
+                behaviour). 'none' - no legend.
 
         Example:
             bt.plot()
             bt.plot(theme='dark', plot_trades=False)
             bt.plot(theme='dark', width=1400, equity_mode='balance')
+            bt.plot(output='file', filename='mes.html', legend_placement='none')
         '''
         kwargs = dict(
             theme=theme,
@@ -621,6 +632,8 @@ class BacktestEngine(_StoreBuilderMixin):
             footer_text=footer_text,
             superimpose=superimpose,
             derender_on_pan=derender_on_pan,
+            volume_alpha=volume_alpha,
+            legend_placement=legend_placement,
         )
         self._plot_config = kwargs
         from tradetropy.plotting import plot as _plot, PlotConfig

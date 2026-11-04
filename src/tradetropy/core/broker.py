@@ -1452,8 +1452,13 @@ class KlineBroker(BrokerCore):
     Broker for OHLC (bar) data.
 
     - Simulated spread from the bar base price.
-    - SL/TP evaluated worst-case: if both are touched in the same bar,
-      SL is assumed to have occurred first (more conservative result).
+    - Splits the OHLC into bid/ask from the bar base price when use_spread=True.
+    - SL/TP evaluated intrabar. When a bar touches BOTH levels the order is
+      unknown from OHLC; sltp_tiebreak decides:
+        "worst" -> SL always wins (default: nothing optimistic left to the data)
+        "open"  -> level closest to the bar open wins (legacy; it can book a
+                   win the data does not prove)
+      The number of such ambiguous bars is counted in ``sltp_ambiguous``.
     - trade_on_close=True  -> market orders execute at the current bar close.
     - trade_on_close=False -> market orders execute at the next bar open.
 
@@ -1475,6 +1480,7 @@ class KlineBroker(BrokerCore):
         position_mode: PositionMode = PositionMode.POSITION_MODE_NETTING,
         slippage_points: int = 0,
         stop_out_of_money: bool = True,
+        sltp_tiebreak: Literal["open", "worst"] = "worst",
     ):
         super().__init__(
             initial_balance=initial_balance,
@@ -1489,6 +1495,19 @@ class KlineBroker(BrokerCore):
         self.use_spread = use_spread
         self.trade_on_close = trade_on_close
         self.execution_price_source = execution_price_source
+        # Intrabar SL+TP ambiguity policy (see _check_sl_tp_intrabar):
+        #   "open"  -> the level closest to the bar open is assumed to have
+        #              fired first (plausible, but still a guess).
+        #   "worst" -> SL always wins when both are touched in the same bar,
+        #              i.e. never invent a win the OHLC data cannot prove.
+        if sltp_tiebreak not in ("open", "worst"):
+            raise ValueError(
+                f"sltp_tiebreak must be 'open' or 'worst', got: {sltp_tiebreak!r}"
+            )
+        self.sltp_tiebreak = sltp_tiebreak
+        # Number of intrabar bars where SL and TP were both touched (i.e. the
+        # outcome had to be guessed). Reported by the backtest summary.
+        self.sltp_ambiguous = 0
 
     # ── Hook ──────────────────────────────────────────────────────────────────
 
@@ -1717,8 +1736,13 @@ class KlineBroker(BrokerCore):
                 tp_hit = pos.tp > 0 and ask_low <= pos.tp
 
             if sl_hit and tp_hit:
-                # Both touched - pick the one closer to the bar open
-                if open_price is not None:
+                # Both touched in the same bar: OHLC alone cannot tell the order.
+                self.sltp_ambiguous = getattr(self, "sltp_ambiguous", 0) + 1
+                if self.sltp_tiebreak == "worst":
+                    # Conservative: never book a win we cannot prove.
+                    tp_hit = False
+                elif open_price is not None:
+                    # Best guess: the level closer to the bar open fired first.
                     dist_sl = abs(open_price - pos.sl)
                     dist_tp = abs(open_price - pos.tp)
                     # On exact tie keep SL (conservative)
@@ -1814,11 +1838,11 @@ class KlineBroker(BrokerCore):
                 half = config.avg_spread / 2.0
                 if trigger.position_type == OrderType.ORDER_TYPE_BUY:
                     exec_price = config.normalize_price(
-                        exec_price + math.ceil(half) * config.tick_step
+                        exec_price + math.ceil(half) * config.tick_size
                     )
                 else:
                     exec_price = config.normalize_price(
-                        exec_price - math.floor(half) * config.tick_step
+                        exec_price - math.floor(half) * config.tick_size
                     )
 
             exec_price = self._apply_slippage(
@@ -1850,7 +1874,7 @@ class KlineBroker(BrokerCore):
         return executed
 
     def _on_reset(self):
-        pass  # KlineBroker has no extra state
+        self.sltp_ambiguous = 0
 
     def _close_position_at_current_price(
         self,

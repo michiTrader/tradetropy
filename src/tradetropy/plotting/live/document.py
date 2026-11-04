@@ -480,7 +480,7 @@ def _render_live_ohlc_bars(fig, source, symbol, interval_ms, theme, fp_proxy=Non
     fig.yaxis.formatter = NumeralTickFormatter(format=price_fmt)
 
 
-def _add_live_volume_bars(fig, source, theme):
+def _add_live_volume_bars(fig, source, theme, volume_alpha=None):
     from bokeh.models import LinearAxis, Range1d, NumeralTickFormatter
     # Bottom-anchored band like backtest (render/_ohlc_volume.py): a plain
     # Range1d whose peak reaches ~20% of the frame height, re-anchored on every
@@ -506,7 +506,10 @@ def _add_live_volume_bars(fig, source, theme):
     fig.vbar(
         x="ts", width="bar_width", top="Volume", bottom=0,
         source=source, fill_color="candle_color", line_color="candle_color",
-        line_width=0, alpha=0.30, y_range_name="vol", legend_label="Volume",
+        line_width=0,
+        alpha=(volume_alpha if volume_alpha is not None
+               else theme.get("volume_alpha", 0.30)),
+        y_range_name="vol", legend_label="Volume",
     )
     _configure_live_autoscale_volume(fig, source, vol_range)
     return vol_range
@@ -609,7 +612,12 @@ def _build_live_indicator_refs(strategy, config, theme, interval_ms, fig_ohlc, x
             # out, so the Y range frames the indicator (e.g. ZigZag) even where
             # candles rolled off the max_candles window.
             if not getattr(meta, "exclude_from_autoscale", False):
-                overlay_series_sources.extend(band_sources)
+                # Only PRICE bands belong in the price autoscale. A ts band
+                # (epoch-ms, ~1e12) fed here blows the Y range and flattens the
+                # candles to a sliver -- e.g. ZigZag's [price, ts] output.
+                overlay_series_sources.extend(
+                    src for i, src in enumerate(band_sources)
+                    if i not in ts_band_set)
             if meta.reference_lines:
                 render_reference_lines(fig_ohlc, meta)
         else:
@@ -950,7 +958,8 @@ def _assemble_live_layout_and_updater(
     )
     if fp_tick_size > 0:
         _configure_fp_yaxis(fig_ohlc, fp_tick_size, autoscale_cb=_autoscale_cb)
-    _configure_legends(all_figs, theme)
+    _configure_legends(all_figs, theme,
+                       getattr(config, "legend_placement", "outside_top"))
     _configure_margins(all_figs)
     # tick_size of the main symbol (from the broker), with the footprint
     # bucket as fallback when the symbol is not registered.
@@ -1193,7 +1202,8 @@ def build_live_document(
     _render_live_ohlc_bars(fig_ohlc, source_ohlc, symbol, interval_ms, theme, fp_proxy=primary_fp_proxy, ohlc_style=config.ohlc_style, price_digits=price_digits)
 
     if config.plot_volume:
-        ohlc_ref.vol_range = _add_live_volume_bars(fig_ohlc, source_ohlc, theme)
+        ohlc_ref.vol_range = _add_live_volume_bars(
+            fig_ohlc, source_ohlc, theme, getattr(config, "volume_alpha", None))
 
     # ══════════════════════════════════════════════════════════════════════════
     # 3. Indicators + Trades + Footprint

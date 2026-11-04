@@ -95,6 +95,51 @@ def _ticks_to_klines(
     return np.ascontiguousarray(klines[:, :N_OHLC_COLS])
 
 
+def _klines_to_klines(
+    klines: np.ndarray,
+    interval_ms: int,
+) -> np.ndarray:
+    """
+    Re-bucket an OHLCV kline array to ``interval_ms`` (kline feed mode).
+
+    In ``by_klines`` playback the dataset rows are already candles, not ticks,
+    so they must NOT go through ``_ticks_to_klines`` (which reads a tick price
+    column that does not exist in a kline row and collapses every candle to
+    open==high==low==close). This aggregates klines->klines with proper OHLC
+    semantics: open = first, high = max, low = min, close = last, volume = sum.
+
+    When the requested interval matches the native cadence (exactly one input
+    row per bucket) the rows are returned unchanged, preserving their original
+    timestamps so the candles are not shifted.
+
+    Args:
+        klines (np.ndarray): OHLCV rows [N, >=N_OHLC_COLS] (ts, o, h, l, c, v).
+        interval_ms (int): Target candle duration in milliseconds.
+
+    Returns:
+        np.ndarray: OHLCV array of shape [M, N_OHLC_COLS].
+    """
+    if klines is None or len(klines) == 0:
+        return np.empty((0, N_OHLC_COLS), dtype=np.float64)
+    k = np.ascontiguousarray(
+        np.asarray(klines, dtype=np.float64)[:, :N_OHLC_COLS])
+    buckets = (k[:, 0] // interval_ms) * interval_ms
+    uniq, idx = np.unique(buckets, return_index=True)
+    if len(uniq) == len(k):
+        # Native interval (one row per bucket): identity, keep original ts.
+        return k.copy()
+    out = np.empty((len(uniq), N_OHLC_COLS), dtype=np.float64)
+    for gi in range(len(uniq)):
+        s = idx[gi]
+        e = idx[gi + 1] if gi + 1 < len(uniq) else len(k)
+        g = k[s:e]
+        out[gi] = (
+            uniq[gi], g[0, 1], np.nanmax(g[:, 2]),
+            np.nanmin(g[:, 3]), g[-1, 4], np.nansum(g[:, 5]),
+        )
+    return out
+
+
 # =============================================================================
 # REPLAY SESH
 # =============================================================================
@@ -453,6 +498,16 @@ class ReplaySesh(SeshSimulatorBase):
         self._assert_has_data(symbol)
         key = (symbol, interval_ms)
 
+        # Kline feed mode: the warmup rows ARE candles. Aggregate klines->klines
+        # (never through _ticks_to_klines, which would flatten every candle to a
+        # single price). The reserved warmup slice lives in self._history.
+        if getattr(self, "_feed_type", None) == "kline":
+            hist_klines = self._history.get(symbol)
+            kl = _klines_to_klines(hist_klines, interval_ms)
+            if len(kl) == 0:
+                return np.empty((0, N_OHLC_COLS), dtype=np.float64)
+            return kl[-n:].copy() if len(kl) > n else kl.copy()
+
         # Pre-calculated klines for history
         hist_key = ("_hist", symbol, interval_ms)
         if hist_key not in self._kline_cache:
@@ -502,6 +557,15 @@ class ReplaySesh(SeshSimulatorBase):
 
         if len(visible) == 0:
             return None
+
+        # Kline feed mode: visible rows ARE candles. Aggregate klines->klines,
+        # not ticks->klines (the latter reads a nonexistent tick price column
+        # and collapses each candle to open==high==low==close -> flat chart).
+        if getattr(self, "_feed_type", None) == "kline":
+            kl = _klines_to_klines(visible, interval_ms)
+            if len(kl) == 0:
+                return None
+            return kl[-1].copy()
 
         klines = _ticks_to_klines(visible, interval_ms)
         if len(klines) == 0:

@@ -274,6 +274,125 @@ class ConfirmedPivot(Indicator, PivotIndicatorMixin):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# ConfirmedPivotSeries  (ConfirmedPivot + causal query API)
+# ══════════════════════════════════════════════════════════════════════════════
+class ConfirmedPivotSeries(ConfirmedPivot):
+    """
+    ``ConfirmedPivot`` + a CAUSAL QUERY API: the pivots as an ordered list with
+    the bar that confirmed each one, instead of four band arrays to index.
+
+    Why it exists
+    -------------
+    A band read (``self.piv.high[-2]``) rebuilds the proxy view and slices the
+    whole output column — ~75 us on a 6 300-bar window — and a strategy that
+    folds pivots bar by bar paid it several times per bar. The query returns
+    only what the caller has not seen yet (it keeps a cursor), so the per-bar
+    cost is O(#new pivots): usually zero.
+
+    Why a separate class
+    --------------------
+    ``ConfirmedPivot`` is used internally as a plain detector (ZigZag, NBS,
+    Swings, the pattern DSL). Adding a store to it would make every internal
+    recalculation accumulate history nobody asks for. Here the store is
+    APPEND-ONLY — a confirmed pivot never changes, and a recalculation over a
+    sliding window can only ADD entries — so nothing is rebuilt from scratch and
+    the query stays valid whatever window the engine happens to pass in.
+
+    Sampling is IDENTICAL to ``ConfirmedPivot`` (it *is* one, ``calculate``
+    delegates to it): ``use_partial = False``, causal, one row per confirmation
+    bar. Traded == visible by construction.
+
+    Usage::
+
+        self.piv = self.add_indicator(
+            [self.ohlc.ts_ref, self.ohlc.high_ref, self.ohlc.low_ref],
+            ConfirmedPivotSeries(swing=2), plot=True,
+        )
+        # on_data():  fold what is new, remember the cursor
+        for conf_ts, kind, price, real_ts in self.piv.pivots_from(closed_ts, cur):
+            ...
+        cur = self.piv.count_upto(closed_ts)
+
+    Entry: ``(conf_ts, kind, price, real_ts)``
+
+        conf_ts  open ts of the bar that COMPLETED the swing (the "as of" —
+                 the pivot is not knowable before this bar closes)
+        kind     ``"high"`` | ``"low"``
+        price    pivot price
+        real_ts  open ts of the actual pivot candle
+    """
+
+    name = "cpivot_tl"
+    # Opt-in for the engine: add_indicator() delegates unknown public attributes
+    # of the returned proxy to this instance, which is how a Strategy calls
+    # count_upto()/pivots_from() on the handle it got back.
+    exposes_query_api = True
+
+    def __init__(self, swing: int = 2):
+        super().__init__(swing=swing)
+        self._rows: list[tuple[float, str, float, float]] = []
+        self._seen: set[tuple[str, float]] = set()
+        self._conf_ts = np.empty(0, dtype=np.float64)
+
+    def calculate(self, source: np.ndarray) -> np.ndarray:
+        """Same bands as ``ConfirmedPivot``; also feeds the query store."""
+        out = super().calculate(source)
+        self._remember(out, source)
+        return out
+
+    def _remember(self, out: np.ndarray, source: np.ndarray) -> None:
+        n = len(source)
+        if out.ndim != 2 or out.shape[0] < 4 or out.shape[1] != n:
+            return
+        if n < self.min_periods:
+            return
+        ts = source[:, 2]
+        added = False
+        for row, kind in ((0, "high"), (1, "low")):
+            for i in np.flatnonzero(~np.isnan(out[row])):
+                real_ts = float(out[row + 2, i])
+                key = (kind, real_ts)
+                if key in self._seen:
+                    continue
+                self._seen.add(key)
+                self._rows.append((float(ts[i]), kind, float(out[row, i]), real_ts))
+                added = True
+        if added:
+            self._rows.sort(key=lambda r: (r[0], r[3]))
+            self._conf_ts = np.fromiter((r[0] for r in self._rows),
+                                       dtype=np.float64, count=len(self._rows))
+
+    # ------------------------------------------------------------------
+    # Causal queries
+    # ------------------------------------------------------------------
+    def count_upto(self, closed_ts: float) -> int:
+        """How many pivots are knowable at ``closed_ts`` (causal prefix)."""
+        if not self._rows:
+            return 0
+        return int(np.searchsorted(self._conf_ts, float(closed_ts), side="right"))
+
+    def pivots_upto(self, closed_ts: float
+                    ) -> list[tuple[float, str, float, float]]:
+        """Every pivot knowable at ``closed_ts`` — ``(conf_ts, kind, price, real_ts)``.
+
+        A pivot is only returned once the bar that completed its swing has
+        CLOSED, so the answer never contains future information, in backtest or
+        in live.
+        """
+        return self._rows[:self.count_upto(closed_ts)]
+
+    def pivots_from(self, closed_ts: float, start: int = 0
+                    ) -> list[tuple[float, str, float, float]]:
+        """Only the pivots knowable at ``closed_ts`` from ``start`` on.
+
+        The caller keeps the cursor (``count_upto``), so the per-bar cost is the
+        slice it has not folded yet — not a copy of the whole prefix.
+        """
+        k = self.count_upto(closed_ts)
+        return self._rows[start:k] if k > start else []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # PIVOT DETECTOR PROTOCOL
 # ══════════════════════════════════════════════════════════════════════════════
 class PivotDetector(Protocol):

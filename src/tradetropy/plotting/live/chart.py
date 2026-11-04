@@ -408,8 +408,11 @@ class LiveChart:
                         self._periodic_cb = None
                 # Load history now that the session doc is ready.
                 # max_age=0 -> always load in tick mode (ring data is fresh
-                # thanks to the topup above, not old klines).
-                max_age = 0 if feed_type == "tick" else 30
+                # thanks to the topup above, not old klines). Same in replay:
+                # a playback feed is historical BY DEFINITION (a May dataset
+                # read in October is "stale" by the clock), so the age check
+                # must not skip the initial populate or the chart opens empty.
+                max_age = 0 if (feed_type == "tick" or _replay_controller is not None) else 30
                 updater.populate_history(max_age_minutes=max_age)
 
                 # DEBUG - verify source has data after populate

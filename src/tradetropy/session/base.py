@@ -888,6 +888,7 @@ class SeshSimulatorBase(Sesh):
         execution_price_source: str = "close",
         stop_out_of_money: bool = True,
         finalize_trades: bool = False,
+        sltp_tiebreak: str = "worst",
     ):
         """
         Args:
@@ -910,6 +911,15 @@ class SeshSimulatorBase(Sesh):
                 bar so they enter the trade-based stats (like backtesting.py's
                 finalize_trades=True). Default False, which warns if trades
                 remain open at the end.
+            sltp_tiebreak: Kline feed only. What to assume when a single bar
+                touches both the SL and the TP of the same position (the
+                chronological order is unknowable from OHLC):
+                  "worst" -> SL always wins (default: conservative, never
+                             books a win the data does not prove)
+                  "open"  -> the level closer to the bar open fired first
+                             (legacy; it can book a win the data does
+                             not prove)
+                Ignored for tick feeds, where the real order is known.
         """
         self._init_params = {
             'feed_type': feed_type,
@@ -925,6 +935,7 @@ class SeshSimulatorBase(Sesh):
             'execution_price_source': execution_price_source,
             'stop_out_of_money': stop_out_of_money,
             'finalize_trades': finalize_trades,
+            'sltp_tiebreak': sltp_tiebreak,
         }
 
         self._feed_type: "FeedType | None" = feed_type
@@ -985,6 +996,7 @@ class SeshSimulatorBase(Sesh):
                 trade_on_close=p['trade_on_close'],
                 execution_price_source=p['execution_price_source'],
                 stop_out_of_money=p['stop_out_of_money'],
+                sltp_tiebreak=p['sltp_tiebreak'],
             )
         else:
             raise ConfigError(

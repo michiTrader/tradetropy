@@ -193,6 +193,20 @@ _MT5_TYPE_TO_STR = {
     5: "sell_stop",
 }
 
+# La vuelta: string -> OrderType, para traducir orders_get() a objetos Order.
+# (Antes se importaba de ``tradetropy.sim_sesh``, un módulo que ya no existe, así
+# que CUALQUIER llamada a SeshMT5Live.orders()/order_history() moría con
+# ModuleNotFoundError. En vivo la estrategia llama a orders() en cada vela, de
+# modo que sin esto no se puede operar.)
+_ORDER_TYPE_STR_MAP = {
+    "buy": OrderType.ORDER_TYPE_BUY,
+    "sell": OrderType.ORDER_TYPE_SELL,
+    "buy_limit": OrderType.ORDER_TYPE_BUY_LIMIT,
+    "sell_limit": OrderType.ORDER_TYPE_SELL_LIMIT,
+    "buy_stop": OrderType.ORDER_TYPE_BUY_STOP,
+    "sell_stop": OrderType.ORDER_TYPE_SELL_STOP,
+}
+
 _ticket_counter = [0]
 
 
@@ -499,7 +513,6 @@ class SeshMT5Live(SeshLiveBase):
         return ok
 
     def orders(self, symbol: Optional[str] = None) -> List[Order]:
-        from tradetropy.sim_sesh import _ORDER_TYPE_STR_MAP
         mt5 = self._mt5
         raw = mt5.orders_get(symbol=symbol) if symbol else mt5.orders_get()
         if not raw:
@@ -534,7 +547,6 @@ class SeshMT5Live(SeshLiveBase):
         for o in raw:
             if symbol is not None and o.symbol != symbol:
                 continue
-            from tradetropy.sim_sesh import _ORDER_TYPE_STR_MAP
             ot = _MT5_TYPE_TO_STR.get(o.type, "buy")
             result.append(Order(
                 ticket=int(o.ticket),
@@ -1012,7 +1024,7 @@ class SeshMT5Sim(SeshSimulatorBase):
     Parameters - identical to SeshSimulatorBase plus those of SeshMT5Live:
         feed_type, initial_balance, commission, commission_type,
         position_mode, use_margin, margin_rate, slippage_points,
-        use_spread, trade_on_close, execution_price_source.
+        use_spread, trade_on_close, execution_price_source, sltp_tiebreak.
 
     USAGE
     -----
@@ -1065,7 +1077,7 @@ class SeshMT5Sim(SeshSimulatorBase):
         cfg = self._broker._get_symbol_config(symbol)
         is_buy = side.lower() == "buy"
         price_diff = (price_close - price_open) if is_buy else (price_open - price_close)
-        return (price_diff / cfg.tick_step) * cfg.tick_value * volume
+        return (price_diff / cfg.tick_size) * cfg.tick_value * volume
 
     def get_account_info(self) -> dict:
         """Return extended info for the simulated account."""
@@ -1093,7 +1105,7 @@ class SeshMT5Sim(SeshSimulatorBase):
             "volume_min":          cfg.volume_min,
             "volume_max":          cfg.volume_max,
             "volume_step":         cfg.volume_step,
-            "tick_step":           cfg.tick_step,
+            "tick_step":           cfg.tick_size,
             "tick_value":          cfg.tick_value,
             "trade_contract_size": cfg.contract_size,
         }

@@ -174,6 +174,54 @@ class LiveOhlcRing:
             self._partial_candle[col["close"]] = price
             self._partial_candle[col["volume"]] += volume
 
+    def apply_kline(self, ts: int, open_: float, high: float, low: float,
+                    close: float, volume: float, aggregate: bool = False):
+        """
+        Feed a full OHLC candle into the ring (kline feed mode).
+
+        Unlike ``process_tick`` (which only knows a single price and would
+        collapse a candle to open==high==low==close), this preserves the whole
+        OHLC. It closes the previous candle and opens a new one when the bucket
+        (ts // interval_ms) changes.
+
+        Args:
+            ts (int): Candle timestamp in milliseconds.
+            open_/high/low/close (float): Candle OHLC.
+            volume (float): Candle volume.
+            aggregate (bool): False (default) -> snapshot semantics: the incoming
+                OHLC replaces the current bucket's values (correct for a live
+                forming candle whose high/low/close/volume are cumulative
+                snapshots). True -> merge semantics: high=max, low=min,
+                close=last, volume=sum within the bucket (correct when several
+                finer sub-candles are folded into one coarser bucket). For one
+                row per bucket both paths are identical.
+        """
+        col = _OHLC_COL
+        candle_ts = (ts // self.interval_ms) * self.interval_ms
+        if candle_ts != self._ts_current_candle:
+            if self._ts_current_candle >= 0:
+                self._confirm_partial_candle()
+            self._ts_current_candle = candle_ts
+            self._partial_candle[col["ts"]] = candle_ts
+            self._partial_candle[col["open"]] = open_
+            self._partial_candle[col["high"]] = high
+            self._partial_candle[col["low"]] = low
+            self._partial_candle[col["close"]] = close
+            self._partial_candle[col["volume"]] = volume
+        elif aggregate:
+            if high > self._partial_candle[col["high"]]:
+                self._partial_candle[col["high"]] = high
+            if low < self._partial_candle[col["low"]]:
+                self._partial_candle[col["low"]] = low
+            self._partial_candle[col["close"]] = close
+            self._partial_candle[col["volume"]] += volume
+        else:
+            # Snapshot: open stays, the rest is replaced by the latest image.
+            self._partial_candle[col["high"]] = high
+            self._partial_candle[col["low"]] = low
+            self._partial_candle[col["close"]] = close
+            self._partial_candle[col["volume"]] = volume
+
     def load_kline(self, ts: int, open_: float, high: float, low: float, close: float, volume: float):
         """
         Load a candle directly into the buffer.

@@ -704,7 +704,8 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
     )
 
     # ── 4. Global configurations ─────────────────────────────────────────
-    _configure_legends(all_figs, theme)
+    _configure_legends(all_figs, theme,
+                       getattr(config, "legend_placement", "outside_top"))
     _configure_margins(all_figs)
     _configure_crosshair(all_figs, theme, tick_size=(price_tick or fp_tick_size),
                          ohlc_fig=fig_ohlc)

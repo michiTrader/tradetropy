@@ -4,6 +4,37 @@ The canonical changelog lives in
 [`CHANGELOG.md`](https://github.com/michiTrader/tradetropy/blob/main/CHANGELOG.md)
 at the repository root. Highlights below.
 
+## [0.3.2] - 2026-11-03
+
+### Added
+- SMC order blocks in `tradetropy.ta.order_blocks` (`find_order_blocks()`,
+  `SmcOrderBlock`): causal, no lookahead - every `Block` carries
+  `confirmed_idx`, the bar at which it first becomes knowable from closed bars.
+- `ConfirmedPivotSeries`: `ConfirmedPivot` plus a causal query API
+  (`pivots_from()` / `count_upto()`), so folding pivots bar by bar costs
+  O(new pivots) instead of re-slicing the band arrays.
+- `bt.plot(legend_placement=, volume_alpha=)`: the legend now sits on its own
+  horizontal strip above the price frame (`"inside"` / `"none"` to opt out), and
+  `output="file"` writes the HTML without opening a browser tab, painting the
+  whole page in the theme background.
+
+### Changed
+- **Breaking (default flipped):** `sltp_tiebreak="worst"` in `KlineBroker`,
+  `SeshSimulatorBase` and `SeshMT5Sim`. When one bar touches both the SL and the
+  TP of a position, the stop is assumed to have fired first - no win is booked
+  that the OHLC data cannot prove. `"open"` restores the old guess, and
+  `broker.sltp_ambiguous` counts the affected bars.
+
+### Fixed
+- MT5: `SeshMT5Live.orders()` / `order_history()` raised `ModuleNotFoundError`
+  (a module that no longer exists), and `SeshMT5Sim` profit/account info raised
+  `AttributeError` (`cfg.tick_step` does not exist).
+- Replay: kline datasets were re-bucketed as ticks, so candles plotted flat; a
+  replay chart could also open empty, flicker and double-count volume.
+- Live: warmup never completed for strategies subscribing several intervals.
+- `read_klines()` accepted `avg_spread` but never applied it to the symbol
+  config, so kline backtests ran with zero spread.
+
 ## [0.3.0] - 2026-07-28
 
 ### Added

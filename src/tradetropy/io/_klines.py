@@ -370,6 +370,7 @@ def read_klines(
         symbol=symbol, data=data, timeframe=interval_ms,
         tick_size=tick_size, tick_value=tick_value,
         contract_size=contract_size, digits=digits,
+        avg_spread=avg_spread,
         volume_min=volume_min, volume_max=volume_max,
         volume_step=volume_step,
     )
