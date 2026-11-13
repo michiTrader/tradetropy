@@ -475,7 +475,7 @@ class SeshMT5Live(SeshLiveBase):
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": self._get_filling_mode(symbol),
         }
-        result = mt5.order_send(req)
+        result = mt5.order_send(**req)
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             return False
 
@@ -492,7 +492,7 @@ class SeshMT5Live(SeshLiveBase):
         mt5 = self._mt5
         req = {"action": mt5.TRADE_ACTION_SLTP, "position": ticket,
                "sl": float(sl), "tp": float(tp)}
-        result = mt5.order_send(req)
+        result = mt5.order_send(**req)
         ok = result is not None and result.retcode == mt5.TRADE_RETCODE_DONE
         if ok and ticket in self._cache_positions:
             if sl:
@@ -504,7 +504,7 @@ class SeshMT5Live(SeshLiveBase):
     def order_delete(self, ticket: int) -> bool:
         mt5 = self._mt5
         req = {"action": mt5.TRADE_ACTION_REMOVE, "order": ticket}
-        result = mt5.order_send(req)
+        result = mt5.order_send(**req)
         ok = result is not None and result.retcode == mt5.TRADE_RETCODE_DONE
         if ok and ticket in self._cache_orders:
             d = self._cache_orders.pop(ticket)
@@ -899,11 +899,12 @@ class SeshMT5Live(SeshLiveBase):
             "type_time":    mt5.ORDER_TIME_GTC,
             "type_filling": self._get_filling_mode(symbol),
         }
-        result = mt5.order_send(req)
+        # The MetaTrader5 Python SDK expects the trade request fields as keywords.
+        result = mt5.order_send(**req)
         if result is None:
             return TradeResult(
                 retcode=TradeResult.TRADE_RETCODE_INVALID,
-                comment=f"order_send returned None: {mt5.last_error()}",
+                comment=f"MT5 Python order_send returned no trade result: {mt5.last_error()}",
             )
 
         ok = result.retcode in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED)

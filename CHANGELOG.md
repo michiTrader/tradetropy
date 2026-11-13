@@ -4,6 +4,14 @@ All notable changes to Tradetropy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.3] - 2026-11-13
+
+### Fixed
+- The MT5 live connector now passes trade request fields as keyword arguments.
+  This fixes the Python SDK's `Unnamed arguments not allowed` error when
+  placing market or pending orders, closing positions, updating SL/TP, or
+  canceling pending orders.
+
 ## [0.3.2] - 2026-11-03
 
 ### Added
