@@ -1,0 +1,2494 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A professional backtesting and live trading framework for algorithmic trading strategies with footprint analysis and market microstructure.">
+      
+      
+      
+        <link rel="canonical" href="https://michiTrader.github.io/tradetropy/reference/datasets/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../data-types/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Datasets - Tradetropy</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#datasets" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Tradetropy" class="md-header__button md-logo" aria-label="Tradetropy" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Tradetropy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Datasets
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/michiTrader/tradetropy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    michiTrader/tradetropy
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Tradetropy" class="md-nav__button md-logo" aria-label="Tradetropy" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="logo">
+
+    </a>
+    Tradetropy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/michiTrader/tradetropy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    michiTrader/tradetropy
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core concepts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working with data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/indicators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Indicators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/order-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Order flow and L2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/backtesting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backtesting and optimization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/live/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live trading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/replay/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Replay and paper trading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/robustness/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Monte Carlo robustness
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/plotting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plotting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Performance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Datasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tradetropy.datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        datasets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="datasets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.dataset_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dataset_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.list_datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_btcusd_1m" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_btcusd_1m
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_adausd_1m" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_adausd_1m
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_aapl_1d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_aapl_1d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_goog_1d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_goog_1d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_mesu26_ticks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_mesu26_ticks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_mnqu26_ticks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_mnqu26_ticks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_adausd_ticks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_adausd_ticks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_adausd_book" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_adausd_book
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data-types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data IO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../engines/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../strategy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../indicators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Indicators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tradetropy.datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        datasets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="datasets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.dataset_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dataset_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.list_datasets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_datasets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_btcusd_1m" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_btcusd_1m
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_adausd_1m" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_adausd_1m
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_aapl_1d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_aapl_1d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_goog_1d" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_goog_1d
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_mesu26_ticks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_mesu26_ticks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_mnqu26_ticks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_mnqu26_ticks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_adausd_ticks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_adausd_ticks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tradetropy.datasets.load_adausd_book" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_adausd_book
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="datasets">Datasets<a class="headerlink" href="#datasets" title="Permanent link">&para;</a></h1>
+<p>Bundled sample datasets used across the examples, the guide and the tests.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="tradetropy.datasets" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">datasets</span>
+
+
+<a href="#tradetropy.datasets" class="headerlink" title="Permanent link">&para;</a></h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Bundled sample datasets for Tradetropy.</p>
+<p>This package ships a small, curated collection of market data so the examples,
+the user guide and the test suite all run out of the box - no downloads, no API
+keys. Every loader returns a first-class Tradetropy domain object (<code>KlineData</code>,
+<code>TickData</code> or <code>BookData</code>) ready to feed an engine.</p>
+<p>The datasets are intentionally small and independent samples from different
+instruments and periods:</p>
+<p>======================  =========  ========  =======  =====================
+Loader                  Type       Symbol    Rows     Notes
+======================  =========  ========  =======  =====================
+<code>load_btcusd_1m()</code>    KlineData  BTCUSDT   500      1-minute crypto (npz)
+<code>load_adausd_1m()</code>    KlineData  ADAUSDT   500      1-minute crypto (npz)
+<code>load_aapl_1d()</code>      KlineData  AAPL      300      daily stock (csv)
+<code>load_goog_1d()</code>      KlineData  GOOG      300      daily stock (csv)
+<code>load_mesu26_ticks()</code> TickData   MESU26    2000     futures ticks (npz)
+<code>load_mnqu26_ticks()</code> TickData   MNQU26    2000     futures ticks (npz)
+<code>load_adausd_ticks()</code> TickData   ADAUSDT   43629    ticks paired with book
+<code>load_adausd_book()</code>  BookData   ADAUSDT   240      L2 depth, 6 levels
+======================  =========  ========  =======  =====================</p>
+<p>Multi-timeframe
+    Load a 1-minute series and call <code>.resample()</code> to build any higher
+    timeframe from a single dataset::</p>
+<div class="highlight"><pre><span></span><code>    from tradetropy.datasets import load_btcusd_1m
+
+    btc_1m = load_btcusd_1m()
+    btc_1h = btc_1m.resample(&#39;1h&#39;)
+    btc_1d = btc_1m.resample(&#39;1d&#39;)
+</code></pre></div>
+<p>Multi-symbol
+    Every loader is independent, so combine them freely::</p>
+<div class="highlight"><pre><span></span><code>    from tradetropy.datasets import load_btcusd_1m, load_adausd_1m
+
+    data = (load_btcusd_1m(), load_adausd_1m())
+</code></pre></div>
+<p>L2 order book (paired)
+    <code>load_adausd_ticks()</code> and <code>load_adausd_book()</code> share the same timestamp
+    range, so they replay together for the order-flow L2 indicators
+    (<code>DeepTrades</code>, <code>DeepWall</code>, ...). The order book is fed to the engine
+    through <code>ReplayEngine</code> (a plain backtest has no book)::</p>
+<div class="highlight"><pre><span></span><code>    from tradetropy.datasets import load_adausd_ticks, load_adausd_book
+    from tradetropy.replay import ReplayEngine
+
+    ticks = load_adausd_ticks()
+    book  = load_adausd_book()
+    engine = ReplayEngine.by_ticks(
+        MyStrategy(), data=(ticks,), book=book,
+    )
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.dataset_path" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">dataset_path</span>
+
+
+<a href="#tradetropy.datasets.dataset_path" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">dataset_path</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a context manager yielding the on-disk path of a bundled dataset.</p>
+<p>Handy when you want to read a file directly (e.g. with pandas) instead of
+through the typed loaders.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dataset key (see <code>DATASETS</code> / <code>list_datasets()</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>contextmanager</code></td>            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Yields a <code>pathlib.Path</code> to the data file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="KeyError">KeyError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If the dataset name is unknown.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>with dataset_path('btcusd_1m') as p:
+    print(p, p.stat().st_size)</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-156">156</a></span>
+<span class="normal"><a href="#__codelineno-0-157">157</a></span>
+<span class="normal"><a href="#__codelineno-0-158">158</a></span>
+<span class="normal"><a href="#__codelineno-0-159">159</a></span>
+<span class="normal"><a href="#__codelineno-0-160">160</a></span>
+<span class="normal"><a href="#__codelineno-0-161">161</a></span>
+<span class="normal"><a href="#__codelineno-0-162">162</a></span>
+<span class="normal"><a href="#__codelineno-0-163">163</a></span>
+<span class="normal"><a href="#__codelineno-0-164">164</a></span>
+<span class="normal"><a href="#__codelineno-0-165">165</a></span>
+<span class="normal"><a href="#__codelineno-0-166">166</a></span>
+<span class="normal"><a href="#__codelineno-0-167">167</a></span>
+<span class="normal"><a href="#__codelineno-0-168">168</a></span>
+<span class="normal"><a href="#__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#__codelineno-0-180">180</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-156" name="__codelineno-0-156"></a><span class="k">def</span><span class="w"> </span><span class="nf">dataset_path</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-0-157" name="__codelineno-0-157"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-158" name="__codelineno-0-158"></a><span class="sd">    Return a context manager yielding the on-disk path of a bundled dataset.</span>
+<a id="__codelineno-0-159" name="__codelineno-0-159"></a>
+<a id="__codelineno-0-160" name="__codelineno-0-160"></a><span class="sd">    Handy when you want to read a file directly (e.g. with pandas) instead of</span>
+<a id="__codelineno-0-161" name="__codelineno-0-161"></a><span class="sd">    through the typed loaders.</span>
+<a id="__codelineno-0-162" name="__codelineno-0-162"></a>
+<a id="__codelineno-0-163" name="__codelineno-0-163"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-164" name="__codelineno-0-164"></a><span class="sd">        name (str): Dataset key (see ``DATASETS`` / ``list_datasets()``).</span>
+<a id="__codelineno-0-165" name="__codelineno-0-165"></a>
+<a id="__codelineno-0-166" name="__codelineno-0-166"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-167" name="__codelineno-0-167"></a><span class="sd">        contextmanager: Yields a ``pathlib.Path`` to the data file.</span>
+<a id="__codelineno-0-168" name="__codelineno-0-168"></a>
+<a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="sd">        KeyError: If the dataset name is unknown.</span>
+<a id="__codelineno-0-171" name="__codelineno-0-171"></a>
+<a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">        with dataset_path(&#39;btcusd_1m&#39;) as p:</span>
+<a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">            print(p, p.stat().st_size)</span>
+<a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-176" name="__codelineno-0-176"></a>    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DATASETS</span><span class="p">:</span>
+<a id="__codelineno-0-177" name="__codelineno-0-177"></a>        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+<a id="__codelineno-0-178" name="__codelineno-0-178"></a>            <span class="sa">f</span><span class="s2">&quot;Unknown dataset </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Available: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">DATASETS</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-179" name="__codelineno-0-179"></a>        <span class="p">)</span>
+<a id="__codelineno-0-180" name="__codelineno-0-180"></a>    <span class="k">return</span> <span class="n">_resolved</span><span class="p">(</span><span class="n">DATASETS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s2">&quot;file&quot;</span><span class="p">])</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.list_datasets" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">list_datasets</span>
+
+
+<a href="#tradetropy.datasets.list_datasets" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">list_datasets</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;List[dict]&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>List the bundled datasets and their metadata.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>&#39;List[dict]&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>list[dict]: One entry per dataset with keys <code>name</code>, <code>kind</code>,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code>&#39;List[dict]&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>symbol</code>, <code>rows</code>, <code>timeframe</code> (klines only) and <code>description</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>for d in list_datasets():
+    print(d['name'], d['kind'], d['symbol'], d['rows'])</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#__codelineno-0-192">192</a></span>
+<span class="normal"><a href="#__codelineno-0-193">193</a></span>
+<span class="normal"><a href="#__codelineno-0-194">194</a></span>
+<span class="normal"><a href="#__codelineno-0-195">195</a></span>
+<span class="normal"><a href="#__codelineno-0-196">196</a></span>
+<span class="normal"><a href="#__codelineno-0-197">197</a></span>
+<span class="normal"><a href="#__codelineno-0-198">198</a></span>
+<span class="normal"><a href="#__codelineno-0-199">199</a></span>
+<span class="normal"><a href="#__codelineno-0-200">200</a></span>
+<span class="normal"><a href="#__codelineno-0-201">201</a></span>
+<span class="normal"><a href="#__codelineno-0-202">202</a></span>
+<span class="normal"><a href="#__codelineno-0-203">203</a></span>
+<span class="normal"><a href="#__codelineno-0-204">204</a></span>
+<span class="normal"><a href="#__codelineno-0-205">205</a></span>
+<span class="normal"><a href="#__codelineno-0-206">206</a></span>
+<span class="normal"><a href="#__codelineno-0-207">207</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="k">def</span><span class="w"> </span><span class="nf">list_datasets</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;List[dict]&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-185" name="__codelineno-0-185"></a><span class="sd">    List the bundled datasets and their metadata.</span>
+<a id="__codelineno-0-186" name="__codelineno-0-186"></a>
+<a id="__codelineno-0-187" name="__codelineno-0-187"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-188" name="__codelineno-0-188"></a><span class="sd">        list[dict]: One entry per dataset with keys ``name``, ``kind``,</span>
+<a id="__codelineno-0-189" name="__codelineno-0-189"></a><span class="sd">        ``symbol``, ``rows``, ``timeframe`` (klines only) and ``description``.</span>
+<a id="__codelineno-0-190" name="__codelineno-0-190"></a>
+<a id="__codelineno-0-191" name="__codelineno-0-191"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-192" name="__codelineno-0-192"></a><span class="sd">        for d in list_datasets():</span>
+<a id="__codelineno-0-193" name="__codelineno-0-193"></a><span class="sd">            print(d[&#39;name&#39;], d[&#39;kind&#39;], d[&#39;symbol&#39;], d[&#39;rows&#39;])</span>
+<a id="__codelineno-0-194" name="__codelineno-0-194"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-195" name="__codelineno-0-195"></a>    <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="__codelineno-0-196" name="__codelineno-0-196"></a>    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">DATASETS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-197" name="__codelineno-0-197"></a>        <span class="n">entry</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-198" name="__codelineno-0-198"></a>            <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+<a id="__codelineno-0-199" name="__codelineno-0-199"></a>            <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-200" name="__codelineno-0-200"></a>            <span class="s2">&quot;symbol&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;symbol&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-201" name="__codelineno-0-201"></a>            <span class="s2">&quot;rows&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;rows&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-202" name="__codelineno-0-202"></a>            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;description&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-203" name="__codelineno-0-203"></a>        <span class="p">}</span>
+<a id="__codelineno-0-204" name="__codelineno-0-204"></a>        <span class="k">if</span> <span class="s2">&quot;timeframe&quot;</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
+<a id="__codelineno-0-205" name="__codelineno-0-205"></a>            <span class="n">entry</span><span class="p">[</span><span class="s2">&quot;timeframe&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;timeframe&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-206" name="__codelineno-0-206"></a>        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+<a id="__codelineno-0-207" name="__codelineno-0-207"></a>    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_btcusd_1m" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_btcusd_1m</span>
+
+
+<a href="#tradetropy.datasets.load_btcusd_1m" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_btcusd_1m</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;KlineData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 500 one-minute BTCUSDT candles (crypto).</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>KlineData</code></td>            <td>
+                  <code>&#39;KlineData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>1-minute OHLCV+turnover candles for BTCUSDT.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>from tradetropy import BacktestEngine
+from tradetropy.datasets import load_btcusd_1m</p>
+<p>btc = load_btcusd_1m()
+engine = BacktestEngine.by_klines(MyStrategy(), data=(btc,))</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-223">223</a></span>
+<span class="normal"><a href="#__codelineno-0-224">224</a></span>
+<span class="normal"><a href="#__codelineno-0-225">225</a></span>
+<span class="normal"><a href="#__codelineno-0-226">226</a></span>
+<span class="normal"><a href="#__codelineno-0-227">227</a></span>
+<span class="normal"><a href="#__codelineno-0-228">228</a></span>
+<span class="normal"><a href="#__codelineno-0-229">229</a></span>
+<span class="normal"><a href="#__codelineno-0-230">230</a></span>
+<span class="normal"><a href="#__codelineno-0-231">231</a></span>
+<span class="normal"><a href="#__codelineno-0-232">232</a></span>
+<span class="normal"><a href="#__codelineno-0-233">233</a></span>
+<span class="normal"><a href="#__codelineno-0-234">234</a></span>
+<span class="normal"><a href="#__codelineno-0-235">235</a></span>
+<span class="normal"><a href="#__codelineno-0-236">236</a></span>
+<span class="normal"><a href="#__codelineno-0-237">237</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_btcusd_1m</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;KlineData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-224" name="__codelineno-0-224"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-225" name="__codelineno-0-225"></a><span class="sd">    Load 500 one-minute BTCUSDT candles (crypto).</span>
+<a id="__codelineno-0-226" name="__codelineno-0-226"></a>
+<a id="__codelineno-0-227" name="__codelineno-0-227"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-228" name="__codelineno-0-228"></a><span class="sd">        KlineData: 1-minute OHLCV+turnover candles for BTCUSDT.</span>
+<a id="__codelineno-0-229" name="__codelineno-0-229"></a>
+<a id="__codelineno-0-230" name="__codelineno-0-230"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-231" name="__codelineno-0-231"></a><span class="sd">        from tradetropy import BacktestEngine</span>
+<a id="__codelineno-0-232" name="__codelineno-0-232"></a><span class="sd">        from tradetropy.datasets import load_btcusd_1m</span>
+<a id="__codelineno-0-233" name="__codelineno-0-233"></a>
+<a id="__codelineno-0-234" name="__codelineno-0-234"></a><span class="sd">        btc = load_btcusd_1m()</span>
+<a id="__codelineno-0-235" name="__codelineno-0-235"></a><span class="sd">        engine = BacktestEngine.by_klines(MyStrategy(), data=(btc,))</span>
+<a id="__codelineno-0-236" name="__codelineno-0-236"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-237" name="__codelineno-0-237"></a>    <span class="k">return</span> <span class="n">_load_klines</span><span class="p">(</span><span class="s2">&quot;btcusd_1m&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_adausd_1m" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_adausd_1m</span>
+
+
+<a href="#tradetropy.datasets.load_adausd_1m" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_adausd_1m</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;KlineData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 500 one-minute ADAUSDT candles (crypto).</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>KlineData</code></td>            <td>
+                  <code>&#39;KlineData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>1-minute OHLCV+turnover candles for ADAUSDT.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-240">240</a></span>
+<span class="normal"><a href="#__codelineno-0-241">241</a></span>
+<span class="normal"><a href="#__codelineno-0-242">242</a></span>
+<span class="normal"><a href="#__codelineno-0-243">243</a></span>
+<span class="normal"><a href="#__codelineno-0-244">244</a></span>
+<span class="normal"><a href="#__codelineno-0-245">245</a></span>
+<span class="normal"><a href="#__codelineno-0-246">246</a></span>
+<span class="normal"><a href="#__codelineno-0-247">247</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-240" name="__codelineno-0-240"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_adausd_1m</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;KlineData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="sd">    Load 500 one-minute ADAUSDT candles (crypto).</span>
+<a id="__codelineno-0-243" name="__codelineno-0-243"></a>
+<a id="__codelineno-0-244" name="__codelineno-0-244"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-245" name="__codelineno-0-245"></a><span class="sd">        KlineData: 1-minute OHLCV+turnover candles for ADAUSDT.</span>
+<a id="__codelineno-0-246" name="__codelineno-0-246"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-247" name="__codelineno-0-247"></a>    <span class="k">return</span> <span class="n">_load_klines</span><span class="p">(</span><span class="s2">&quot;adausd_1m&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_aapl_1d" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_aapl_1d</span>
+
+
+<a href="#tradetropy.datasets.load_aapl_1d" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_aapl_1d</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;KlineData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 300 daily AAPL candles (stock, from CSV).</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>KlineData</code></td>            <td>
+                  <code>&#39;KlineData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Daily OHLCV candles for AAPL.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-250">250</a></span>
+<span class="normal"><a href="#__codelineno-0-251">251</a></span>
+<span class="normal"><a href="#__codelineno-0-252">252</a></span>
+<span class="normal"><a href="#__codelineno-0-253">253</a></span>
+<span class="normal"><a href="#__codelineno-0-254">254</a></span>
+<span class="normal"><a href="#__codelineno-0-255">255</a></span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span>
+<span class="normal"><a href="#__codelineno-0-257">257</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-250" name="__codelineno-0-250"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_aapl_1d</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;KlineData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-251" name="__codelineno-0-251"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-252" name="__codelineno-0-252"></a><span class="sd">    Load 300 daily AAPL candles (stock, from CSV).</span>
+<a id="__codelineno-0-253" name="__codelineno-0-253"></a>
+<a id="__codelineno-0-254" name="__codelineno-0-254"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-255" name="__codelineno-0-255"></a><span class="sd">        KlineData: Daily OHLCV candles for AAPL.</span>
+<a id="__codelineno-0-256" name="__codelineno-0-256"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-257" name="__codelineno-0-257"></a>    <span class="k">return</span> <span class="n">_load_klines</span><span class="p">(</span><span class="s2">&quot;aapl_1d&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_goog_1d" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_goog_1d</span>
+
+
+<a href="#tradetropy.datasets.load_goog_1d" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_goog_1d</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;KlineData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 300 daily GOOG candles (stock, from CSV).</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>KlineData</code></td>            <td>
+                  <code>&#39;KlineData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Daily OHLCV candles for GOOG.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-260">260</a></span>
+<span class="normal"><a href="#__codelineno-0-261">261</a></span>
+<span class="normal"><a href="#__codelineno-0-262">262</a></span>
+<span class="normal"><a href="#__codelineno-0-263">263</a></span>
+<span class="normal"><a href="#__codelineno-0-264">264</a></span>
+<span class="normal"><a href="#__codelineno-0-265">265</a></span>
+<span class="normal"><a href="#__codelineno-0-266">266</a></span>
+<span class="normal"><a href="#__codelineno-0-267">267</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-260" name="__codelineno-0-260"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_goog_1d</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;KlineData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-261" name="__codelineno-0-261"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-262" name="__codelineno-0-262"></a><span class="sd">    Load 300 daily GOOG candles (stock, from CSV).</span>
+<a id="__codelineno-0-263" name="__codelineno-0-263"></a>
+<a id="__codelineno-0-264" name="__codelineno-0-264"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-265" name="__codelineno-0-265"></a><span class="sd">        KlineData: Daily OHLCV candles for GOOG.</span>
+<a id="__codelineno-0-266" name="__codelineno-0-266"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-267" name="__codelineno-0-267"></a>    <span class="k">return</span> <span class="n">_load_klines</span><span class="p">(</span><span class="s2">&quot;goog_1d&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_mesu26_ticks" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_mesu26_ticks</span>
+
+
+<a href="#tradetropy.datasets.load_mesu26_ticks" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_mesu26_ticks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;TickData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 2000 Micro E-mini S&amp;P 500 (MESU26) futures ticks.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>TickData</code></td>            <td>
+                  <code>&#39;TickData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Trade ticks with bid/ask/volume/flags for MESU26.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>from tradetropy import BacktestEngine
+from tradetropy.datasets import load_mesu26_ticks</p>
+<p>ticks = load_mesu26_ticks()
+engine = BacktestEngine.by_ticks(MyStrategy(), data=(ticks,))</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-283">283</a></span>
+<span class="normal"><a href="#__codelineno-0-284">284</a></span>
+<span class="normal"><a href="#__codelineno-0-285">285</a></span>
+<span class="normal"><a href="#__codelineno-0-286">286</a></span>
+<span class="normal"><a href="#__codelineno-0-287">287</a></span>
+<span class="normal"><a href="#__codelineno-0-288">288</a></span>
+<span class="normal"><a href="#__codelineno-0-289">289</a></span>
+<span class="normal"><a href="#__codelineno-0-290">290</a></span>
+<span class="normal"><a href="#__codelineno-0-291">291</a></span>
+<span class="normal"><a href="#__codelineno-0-292">292</a></span>
+<span class="normal"><a href="#__codelineno-0-293">293</a></span>
+<span class="normal"><a href="#__codelineno-0-294">294</a></span>
+<span class="normal"><a href="#__codelineno-0-295">295</a></span>
+<span class="normal"><a href="#__codelineno-0-296">296</a></span>
+<span class="normal"><a href="#__codelineno-0-297">297</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_mesu26_ticks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;TickData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="sd">    Load 2000 Micro E-mini S&amp;P 500 (MESU26) futures ticks.</span>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">        TickData: Trade ticks with bid/ask/volume/flags for MESU26.</span>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="sd">        from tradetropy import BacktestEngine</span>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><span class="sd">        from tradetropy.datasets import load_mesu26_ticks</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><span class="sd">        ticks = load_mesu26_ticks()</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a><span class="sd">        engine = BacktestEngine.by_ticks(MyStrategy(), data=(ticks,))</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a>    <span class="k">return</span> <span class="n">_load_ticks</span><span class="p">(</span><span class="s2">&quot;mesu26_ticks&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_mnqu26_ticks" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_mnqu26_ticks</span>
+
+
+<a href="#tradetropy.datasets.load_mnqu26_ticks" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_mnqu26_ticks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;TickData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 2000 Micro E-mini Nasdaq-100 (MNQU26) futures ticks.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>TickData</code></td>            <td>
+                  <code>&#39;TickData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Trade ticks with bid/ask/volume/flags for MNQU26.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-300">300</a></span>
+<span class="normal"><a href="#__codelineno-0-301">301</a></span>
+<span class="normal"><a href="#__codelineno-0-302">302</a></span>
+<span class="normal"><a href="#__codelineno-0-303">303</a></span>
+<span class="normal"><a href="#__codelineno-0-304">304</a></span>
+<span class="normal"><a href="#__codelineno-0-305">305</a></span>
+<span class="normal"><a href="#__codelineno-0-306">306</a></span>
+<span class="normal"><a href="#__codelineno-0-307">307</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-300" name="__codelineno-0-300"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_mnqu26_ticks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;TickData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a><span class="sd">    Load 2000 Micro E-mini Nasdaq-100 (MNQU26) futures ticks.</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a><span class="sd">        TickData: Trade ticks with bid/ask/volume/flags for MNQU26.</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a>    <span class="k">return</span> <span class="n">_load_ticks</span><span class="p">(</span><span class="s2">&quot;mnqu26_ticks&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_adausd_ticks" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_adausd_ticks</span>
+
+
+<a href="#tradetropy.datasets.load_adausd_ticks" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_adausd_ticks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;TickData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 43629 ADAUSDT ticks paired in time with <code>load_adausd_book()</code>.</p>
+<p>The tick timestamps span exactly the order book's range, so the two replay
+together and the L2 order-flow indicators (<code>DeepTrades</code>, <code>DeepWall</code>,
+...) have a book to read as-of each trade.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>TickData</code></td>            <td>
+                  <code>&#39;TickData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Trade ticks for ADAUSDT overlapping the bundled book.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>from tradetropy.replay import ReplayEngine
+from tradetropy.datasets import load_adausd_ticks, load_adausd_book</p>
+<p>ticks = load_adausd_ticks()
+book  = load_adausd_book()
+engine = ReplayEngine.by_ticks(
+    MyStrategy(), data=(ticks,), book=book,
+)</p>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-310">310</a></span>
+<span class="normal"><a href="#__codelineno-0-311">311</a></span>
+<span class="normal"><a href="#__codelineno-0-312">312</a></span>
+<span class="normal"><a href="#__codelineno-0-313">313</a></span>
+<span class="normal"><a href="#__codelineno-0-314">314</a></span>
+<span class="normal"><a href="#__codelineno-0-315">315</a></span>
+<span class="normal"><a href="#__codelineno-0-316">316</a></span>
+<span class="normal"><a href="#__codelineno-0-317">317</a></span>
+<span class="normal"><a href="#__codelineno-0-318">318</a></span>
+<span class="normal"><a href="#__codelineno-0-319">319</a></span>
+<span class="normal"><a href="#__codelineno-0-320">320</a></span>
+<span class="normal"><a href="#__codelineno-0-321">321</a></span>
+<span class="normal"><a href="#__codelineno-0-322">322</a></span>
+<span class="normal"><a href="#__codelineno-0-323">323</a></span>
+<span class="normal"><a href="#__codelineno-0-324">324</a></span>
+<span class="normal"><a href="#__codelineno-0-325">325</a></span>
+<span class="normal"><a href="#__codelineno-0-326">326</a></span>
+<span class="normal"><a href="#__codelineno-0-327">327</a></span>
+<span class="normal"><a href="#__codelineno-0-328">328</a></span>
+<span class="normal"><a href="#__codelineno-0-329">329</a></span>
+<span class="normal"><a href="#__codelineno-0-330">330</a></span>
+<span class="normal"><a href="#__codelineno-0-331">331</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-310" name="__codelineno-0-310"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_adausd_ticks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;TickData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-312" name="__codelineno-0-312"></a><span class="sd">    Load 43629 ADAUSDT ticks paired in time with ``load_adausd_book()``.</span>
+<a id="__codelineno-0-313" name="__codelineno-0-313"></a>
+<a id="__codelineno-0-314" name="__codelineno-0-314"></a><span class="sd">    The tick timestamps span exactly the order book&#39;s range, so the two replay</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a><span class="sd">    together and the L2 order-flow indicators (``DeepTrades``, ``DeepWall``,</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a><span class="sd">    ...) have a book to read as-of each trade.</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a><span class="sd">        TickData: Trade ticks for ADAUSDT overlapping the bundled book.</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a><span class="sd">    Example:</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a><span class="sd">        from tradetropy.replay import ReplayEngine</span>
+<a id="__codelineno-0-323" name="__codelineno-0-323"></a><span class="sd">        from tradetropy.datasets import load_adausd_ticks, load_adausd_book</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a><span class="sd">        ticks = load_adausd_ticks()</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="sd">        book  = load_adausd_book()</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a><span class="sd">        engine = ReplayEngine.by_ticks(</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a><span class="sd">            MyStrategy(), data=(ticks,), book=book,</span>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a><span class="sd">        )</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a>    <span class="k">return</span> <span class="n">_load_ticks</span><span class="p">(</span><span class="s2">&quot;adausd_ticks&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tradetropy.datasets.load_adausd_book" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">load_adausd_book</span>
+
+
+<a href="#tradetropy.datasets.load_adausd_book" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">load_adausd_book</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s1">&#39;BookData&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Load 240 rows of ADAUSDT L2 order-book depth (6 levels per side).</p>
+<p>Paired in time with <code>load_adausd_ticks()</code> for the L2 / order-flow
+examples. Feed it to the engine through <code>ReplayEngine(book=...)</code>; a plain
+backtest has no order book.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>BookData</code></td>            <td>
+                  <code>&#39;BookData&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Wide L2 book snapshots (bid/ask price and size per level).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/tradetropy/datasets/__init__.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-338">338</a></span>
+<span class="normal"><a href="#__codelineno-0-339">339</a></span>
+<span class="normal"><a href="#__codelineno-0-340">340</a></span>
+<span class="normal"><a href="#__codelineno-0-341">341</a></span>
+<span class="normal"><a href="#__codelineno-0-342">342</a></span>
+<span class="normal"><a href="#__codelineno-0-343">343</a></span>
+<span class="normal"><a href="#__codelineno-0-344">344</a></span>
+<span class="normal"><a href="#__codelineno-0-345">345</a></span>
+<span class="normal"><a href="#__codelineno-0-346">346</a></span>
+<span class="normal"><a href="#__codelineno-0-347">347</a></span>
+<span class="normal"><a href="#__codelineno-0-348">348</a></span>
+<span class="normal"><a href="#__codelineno-0-349">349</a></span>
+<span class="normal"><a href="#__codelineno-0-350">350</a></span>
+<span class="normal"><a href="#__codelineno-0-351">351</a></span>
+<span class="normal"><a href="#__codelineno-0-352">352</a></span>
+<span class="normal"><a href="#__codelineno-0-353">353</a></span>
+<span class="normal"><a href="#__codelineno-0-354">354</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-338" name="__codelineno-0-338"></a><span class="k">def</span><span class="w"> </span><span class="nf">load_adausd_book</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;BookData&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-339" name="__codelineno-0-339"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-340" name="__codelineno-0-340"></a><span class="sd">    Load 240 rows of ADAUSDT L2 order-book depth (6 levels per side).</span>
+<a id="__codelineno-0-341" name="__codelineno-0-341"></a>
+<a id="__codelineno-0-342" name="__codelineno-0-342"></a><span class="sd">    Paired in time with ``load_adausd_ticks()`` for the L2 / order-flow</span>
+<a id="__codelineno-0-343" name="__codelineno-0-343"></a><span class="sd">    examples. Feed it to the engine through ``ReplayEngine(book=...)``; a plain</span>
+<a id="__codelineno-0-344" name="__codelineno-0-344"></a><span class="sd">    backtest has no order book.</span>
+<a id="__codelineno-0-345" name="__codelineno-0-345"></a>
+<a id="__codelineno-0-346" name="__codelineno-0-346"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-347" name="__codelineno-0-347"></a><span class="sd">        BookData: Wide L2 book snapshots (bid/ask price and size per level).</span>
+<a id="__codelineno-0-348" name="__codelineno-0-348"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-349" name="__codelineno-0-349"></a>    <span class="n">meta</span> <span class="o">=</span> <span class="n">DATASETS</span><span class="p">[</span><span class="s2">&quot;adausd_book&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-350" name="__codelineno-0-350"></a>    <span class="k">with</span> <span class="n">_resolved</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;file&quot;</span><span class="p">])</span> <span class="k">as</span> <span class="n">path</span><span class="p">:</span>
+<a id="__codelineno-0-351" name="__codelineno-0-351"></a>        <span class="k">return</span> <span class="n">read_book</span><span class="p">(</span>
+<a id="__codelineno-0-352" name="__codelineno-0-352"></a>            <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">meta</span><span class="p">[</span><span class="s2">&quot;symbol&quot;</span><span class="p">],</span> <span class="n">levels</span><span class="o">=</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;levels&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-353" name="__codelineno-0-353"></a>            <span class="n">tick_size</span><span class="o">=</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;tick_size&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-354" name="__codelineno-0-354"></a>        <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../data-types/" class="md-footer__link md-footer__link--next" aria-label="Next: Data types">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Data types
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; michiTrader - MIT License
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "content.code.copy", "content.code.annotate", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
