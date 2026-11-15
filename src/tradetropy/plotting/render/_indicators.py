@@ -205,7 +205,7 @@ def render_indicator(
 
         def _register(glyph):
             if hide_on_pan_sink is not None and _hide_on_pan and glyph is not None:
-                hide_on_pan_sink.append((glyph, None))
+                hide_on_pan_sink.append(glyph)
 
         if r_type == "scatter":
             g = _render_scatter(fig, src, color, meta, price_dim, render_kwargs)

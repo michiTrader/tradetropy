@@ -20,6 +20,14 @@ bt.plot()                      # opens in the browser
 bt.plot(theme='dark')          # dark theme
 ```
 
+Use `superimpose` to overlay higher-timeframe candle bodies. Add
+`superimpose_wicks=True` to include their highs and lows.
+
+```python
+bt.plot(superimpose="1h")
+bt.plot(superimpose="1h", superimpose_wicks=True)
+```
+
 `PlotConfig` controls the chart chrome (theme, sizing, ...):
 
 ```python

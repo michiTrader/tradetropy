@@ -590,7 +590,10 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
             ohlc_array, interval_ms, _superimpose_interval
         )
         _si_source = build_ohlc_source(_si_array, _si_interval)
-        render_superimpose(fig_ohlc, _si_source, theme, _interval_label(_si_interval))
+        render_superimpose(
+            fig_ohlc, _si_source, theme, _interval_label(_si_interval),
+            show_wicks=config.superimpose_wicks,
+        )
 
     if config.plot_volume:
         render_volume(fig_ohlc, source_ohlc, theme, config, interval_ms)
@@ -712,7 +715,8 @@ def plot(bt, config: PlotConfig | None = None, **kwargs) -> None:
     # Derender blanks BOTH text labels and marker series while panning/zooming;
     # lazy-labels (above) only governs the text labels' zoom-threshold hide.
     _configure_derender(
-        all_figs, lazy_label_entries + hide_on_pan_entries,
+        all_figs, hide_on_pan_entries, label_entries=lazy_label_entries,
+        x_range=x_range, interval_ms=interval_ms, zoom_range=_lazy_zoom,
         enabled=config.derender_on_pan,
     )
 

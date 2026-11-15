@@ -112,7 +112,7 @@ class Rects:
     fill_alpha: Sequence[float] | float = 0.15
     line_color: Sequence[str] | str | None = None
     line_alpha: Sequence[float] | float = 0.6
-    line_width: float = 1.0
+    line_width: Sequence[float] | float = 1.0
     hover: list[tuple[str, str]] | None = None
     extra: dict[str, Sequence] = field(default_factory=dict)
 

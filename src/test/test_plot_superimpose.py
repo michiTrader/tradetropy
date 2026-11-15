@@ -76,12 +76,38 @@ class TestSuperimposeIntegration:
         bt.run()
         return bt
 
-    def test_superimpose_explicit_tf_renders_expected_quad_count(self, tmp_path):
+    @pytest.mark.parametrize("wick_options, expected_segments", [({}, 0), ({"superimpose_wicks": True}, 2)])
+    def test_superimpose_draws_optional_wicks(self, tmp_path, monkeypatch,
+                                            wick_options, expected_segments):
+        from bokeh.models import Legend, Quad, Segment
+        from tradetropy.plotting import plotting
+
+        show = plotting._show_layout
+        captured = {}
+
+        def capture(layout, config, theme):
+            captured["layout"] = layout
+            show(layout, config, theme)
+
+        monkeypatch.setattr(plotting, "_show_layout", capture)
         bt = self._run(n=600)  # 600 minutes = 10h -> "1h" yields ~10 bars
         out = tmp_path / "superimpose.html"
-        bt.plot(output="file", filename=str(out), plot_stats=False, superimpose="1h")
-        html = out.read_text(encoding="utf-8")
-        assert "Superimpose 1h" in html
+        bt.plot(output="file", filename=str(out), plot_stats=False,
+                superimpose="1h", **wick_options)
+        item = next(item for legend in captured["layout"].select({"type": Legend})
+                    for item in legend.items if item.label.value == "Superimpose 1h")
+        body, *wicks = item.renderers
+        assert isinstance(body.glyph, Quad)
+        assert len(wicks) == expected_segments
+        for wick in wicks:
+            assert isinstance(wick.glyph, Segment)
+            assert wick.level == "underlay"
+            assert wick.data_source is body.data_source
+        if wicks:
+            assert {(r.glyph.y0, r.glyph.y1) for r in wicks} == {
+                ("Low", "bottom_body"), ("top_body", "High"),
+            }
+        assert "Superimpose 1h" in out.read_text(encoding="utf-8")
 
     def test_superimpose_disabled_by_default(self, tmp_path):
         bt = self._run(n=600)

@@ -380,7 +380,9 @@ def _configure_autoscale_equity(
     x_range.js_on_change("end", cb)
 
 
-def _configure_derender(figs: list, entries: list, enabled: bool = True) -> None:
+def _configure_derender(figs: list, entries: list, *, label_entries: list,
+                       x_range, interval_ms: int, zoom_range: int,
+                       enabled: bool = True) -> None:
     """
     Wire the global pan/zoom derender for heavy overlay glyphs.
 
@@ -390,41 +392,36 @@ def _configure_derender(figs: list, entries: list, enabled: bool = True) -> None
     MouseWheel has no "end" event) any of the given figures, restoring them
     once the interaction settles. Every figure shares the SAME renderer/group
     lists so a drag on any panel (OHLC, an indicator sub-panel, ...) hides
-    every registered glyph across the whole chart, keeping the interaction
-    consistent regardless of which panel the user is dragging.
+    every registered glyph across the chart. Series visibility is saved when
+    the gesture begins; labels follow their group and the final zoom level.
 
     Args:
         figs (list): Every figure whose PanStart/PanEnd/MouseWheel events
             should trigger the derender (typically all panels sharing the
             time axis, same population as ``_configure_crosshair``).
-        entries (list): ``(renderer, group_glyph)`` tuples; ``group_glyph``
-            (or None) gates the renderer's restored visibility on its legend
-            state, same contract as ``_configure_lazy_labels``.
+        entries (list): Series renderers to hide during the gesture.
+        label_entries (list): ``(label_renderer, group_glyph)`` tuples shared
+            with ``_configure_lazy_labels``.
         enabled (bool): When False, nothing is wired (PlotConfig.
             derender_on_pan == False) - useful to fully disable the mechanism
             while visually debugging a chart.
     """
-    from bokeh.events import PanStart, PanEnd, MouseWheel
+    from bokeh.events import LegendItemClick, PanStart, PanEnd, MouseWheel
     from bokeh.models import CustomJS
 
-    if not enabled or not entries:
+    if not enabled or not (entries or label_entries):
         return
 
-    renderers = [r for r, _ in entries]
-    groups = [g for _, g in entries]
-
-    start_cb = CustomJS(
-        args=dict(renderers=renderers, groups=groups, kind="start"),
-        code=(_JS_DIR / "derender.js").read_text(),
+    code = (_JS_DIR / "derender.js").read_text()
+    args = dict(
+        renderers=entries, labels=[label for label, _ in label_entries],
+        groups=[group for _, group in label_entries], x_range=x_range,
+        interval_ms=interval_ms, zoom_range=zoom_range,
     )
-    end_cb = CustomJS(
-        args=dict(renderers=renderers, groups=groups, kind="end"),
-        code=(_JS_DIR / "derender.js").read_text(),
-    )
-    wheel_cb = CustomJS(
-        args=dict(renderers=renderers, groups=groups, kind="wheel"),
-        code=(_JS_DIR / "derender.js").read_text(),
-    )
+    start_cb = CustomJS(args=dict(args, kind="start"), code=code)
+    end_cb = CustomJS(args=dict(args, kind="end"), code=code)
+    wheel_cb = CustomJS(args=dict(args, kind="wheel"), code=code)
+    legend_cb = CustomJS(args=dict(args, kind="legend"), code=code)
 
     for fig in figs:
         if not hasattr(fig, "js_on_event"):
@@ -432,6 +429,9 @@ def _configure_derender(figs: list, entries: list, enabled: bool = True) -> None
         fig.js_on_event(PanStart, start_cb)
         fig.js_on_event(PanEnd, end_cb)
         fig.js_on_event(MouseWheel, wheel_cb)
+        for legend in fig.legend:
+            if legend.click_policy == "hide":
+                legend.js_on_event(LegendItemClick, legend_cb)
 
 
 def _configure_legends(figs: list, theme: dict, placement: str = "outside_top") -> None:

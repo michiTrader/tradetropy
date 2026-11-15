@@ -28,13 +28,19 @@ from __future__ import annotations
 
 from ._core import (BEARISH, BREAKER, BULLISH, ORDER, PROPULSION, REJECTION,
                    VACUUM, Block, Pivot)
-from .indicators import SmcOrderBlock, blocks_to_rects, pack_active_bands
+from .derived import (find_breaker_blocks, find_propulsion_blocks,
+                      find_rejection_blocks, find_vacuum_blocks)
+from .indicators import (SmcBreakerBlock, SmcOrderBlock, SmcPropulsionBlock,
+                         SmcRejectionBlock, SmcVacuumBlock, blocks_to_rects,
+                         pack_active_bands)
 from .order_block import find_order_blocks
 
 __all__ = [
     "Block", "Pivot",
     "BULLISH", "BEARISH",
     "ORDER", "BREAKER", "REJECTION", "PROPULSION", "VACUUM",
-    "find_order_blocks",
-    "SmcOrderBlock", "blocks_to_rects", "pack_active_bands",
+    "find_order_blocks", "find_breaker_blocks", "find_propulsion_blocks",
+    "find_rejection_blocks", "find_vacuum_blocks",
+    "SmcOrderBlock", "SmcBreakerBlock", "SmcPropulsionBlock",
+    "SmcRejectionBlock", "SmcVacuumBlock", "blocks_to_rects", "pack_active_bands",
 ]

@@ -8,8 +8,10 @@
 // label's legend group glyph (or null), so a label only shows when both zoomed
 // in AND its legend group is enabled.
 
-if (window._lazy_labels_timeout) clearTimeout(window._lazy_labels_timeout);
-window._lazy_labels_timeout = setTimeout(function () {
+const timers = window._tradetropyLabelTimers ??= new WeakMap();
+clearTimeout(timers.get(cb_obj));
+timers.set(cb_obj, setTimeout(function () {
+    if (window._tradetropyPanState?.get(cb_obj)?.visible != null) return;
     const range_ms = cb_obj.end - cb_obj.start;
     const n_candles = range_ms / interval_ms;
     const zoomed_in = n_candles <= zoom_range;
@@ -18,4 +20,4 @@ window._lazy_labels_timeout = setTimeout(function () {
         const group_on = (g === null || g === undefined) ? true : g.visible;
         labels[i].visible = zoomed_in && group_on;
     }
-}, 100);
+}, 100));

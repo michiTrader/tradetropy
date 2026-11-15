@@ -20,3 +20,10 @@ the base classes for writing your own.
         - LargeTrades
         - CandlePatterns
         - ManualMarks
+        - ManualBoxes
+        - ManualLabels
+        - SmcOrderBlock
+        - SmcBreakerBlock
+        - SmcRejectionBlock
+        - SmcPropulsionBlock
+        - SmcVacuumBlock

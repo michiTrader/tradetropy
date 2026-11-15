@@ -121,6 +121,7 @@ def render_tool_groups(
     lazy_x_range=None,
     lazy_zoom_range: int | None = None,
     enable_point_lod: bool = False,
+    clear_missing: bool = False,
 ) -> dict:
     """
     Render (or update) tool primitive groups onto ``fig``.
@@ -145,11 +146,13 @@ def render_tool_groups(
         lazy_x_range: Shared price x_range; when given, the legend toggle re-runs
             the lazy condition so a label only shows when zoomed in AND enabled.
         lazy_zoom_range (int | None): Max candles in view to keep labels visible.
+        clear_missing (bool): Clear previous sources missing from this update.
 
     Returns:
         dict: The registry, so a live ref can reuse it across updates.
     """
     registry = registry if registry is not None else {}
+    updated = set()
 
     for legend, prims in groups.items():
         legend_label = legend if show_legend else None
@@ -164,6 +167,7 @@ def render_tool_groups(
             if data is None:
                 continue
             key = (legend, kind.__name__)
+            updated.add(key)
             existing = registry.get(key)
             if existing is not None:
                 existing.data = data
@@ -221,6 +225,11 @@ def render_tool_groups(
                 interval_ms, lazy_zoom_range,
             )
 
+    if clear_missing:
+        for key in registry.keys() - updated:
+            source = registry[key]
+            if any(len(values) for values in source.data.values()):
+                source.data = {name: values[:0] for name, values in source.data.items()}
     return registry
 
 
@@ -357,6 +366,7 @@ def _build_data(kind, plist: list, theme: dict | None) -> dict | None:
 
     if kind is Rects:
         x0, x1, y0, y1, fill, line, fa, la = [], [], [], [], [], [], [], []
+        widths = []
         for p in plist:
             n = len(list(p.y0))
             x0 += list(p.x0); x1 += list(p.x1); y0 += list(p.y0); y1 += list(p.y1)
@@ -364,6 +374,7 @@ def _build_data(kind, plist: list, theme: dict | None) -> dict | None:
             line += _colors(p.line_color if p.line_color is not None else p.fill_color, n, theme)
             fa += list(_alphas(p.fill_alpha, n))
             la += list(_alphas(p.line_alpha, n))
+            widths += list(_alphas(p.line_width, n))
         if not y0:
             return None
         data = dict(left=_dt(x0), right=_dt(x1),
@@ -371,13 +382,14 @@ def _build_data(kind, plist: list, theme: dict | None) -> dict | None:
                     top=np.asarray(y1, dtype=np.float64),
                     fill=fill, line=line,
                     fill_alpha=np.asarray(fa, dtype=np.float64),
-                    line_alpha=np.asarray(la, dtype=np.float64))
+                    line_alpha=np.asarray(la, dtype=np.float64),
+                    line_width=np.asarray(widths, dtype=np.float64))
         _merge_extra(data, plist)
         return data
 
     if kind is Labels:
         x, y, text, color = [], [], [], []
-        x_off, y_off, t_align, t_base = [], [], [], []
+        x_off, y_off, t_align, t_base, font_size = [], [], [], [], []
         for p in plist:
             n = len(list(p.y))
             x += list(p.x); y += list(p.y); text += list(p.text)
@@ -386,13 +398,14 @@ def _build_data(kind, plist: list, theme: dict | None) -> dict | None:
             y_off += [p.y_offset] * n
             t_align += [p.text_align] * n
             t_base += [p.text_baseline] * n
+            font_size += [p.font_size] * n
         if not y:
             return None
         return dict(x=_dt(x), y=np.asarray(y, dtype=np.float64),
                     text=[str(t) for t in text], color=color,
                     x_offset=np.asarray(x_off, dtype=np.int32),
                     y_offset=np.asarray(y_off, dtype=np.int32),
-                    text_align=t_align, text_baseline=t_base)
+                    text_align=t_align, text_baseline=t_base, font_size=font_size)
 
     return None
 
@@ -419,7 +432,7 @@ def _create_glyph(fig, kind, src, proto, legend: str | None, theme: dict | None)
     # as a column so Bokeh accepts it when a 'source' is supplied.
     if kind in (HLines, Segments):
         _width_param = getattr(proto, "width", None)
-    elif kind is Labels or not hasattr(proto, "line_width"):
+    elif kind in (Labels, Rects) or not hasattr(proto, "line_width"):
         # HBars has no line_width (its edges use fill_color) - nothing to pass.
         _width_param = None
     else:
@@ -438,7 +451,7 @@ def _create_glyph(fig, kind, src, proto, legend: str | None, theme: dict | None)
         labels = LabelSet(
             x="x", y="y", text="text", source=src,
             x_offset="x_offset", y_offset="y_offset",
-            text_font_size=proto.font_size, text_color="color",
+            text_font_size="font_size", text_color="color",
             text_align="text_align", text_baseline="text_baseline",
             y_units=getattr(proto, "y_units", "data"),
         )
@@ -469,7 +482,7 @@ def _create_glyph(fig, kind, src, proto, legend: str | None, theme: dict | None)
         glyph = fig.quad(
             left="left", right="right", bottom="bottom", top="top", source=src,
             fill_color="fill", fill_alpha="fill_alpha", line_color="line",
-            line_alpha="line_alpha", line_width=width_ref, **legend_kw)
+            line_alpha="line_alpha", line_width="line_width", **legend_kw)
 
     if glyph is not None and getattr(proto, "hover", None):
         fig.add_tools(HoverTool(tooltips=list(proto.hover), mode="mouse",

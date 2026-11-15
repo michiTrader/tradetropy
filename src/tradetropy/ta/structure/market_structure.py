@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from tradetropy.ta.base import Indicator, IndicatorPlotConfig
-from tradetropy.ta.draw import Labels, Segments
+from tradetropy.ta.draw import HLines, Labels, Segments
 from tradetropy.ta.structure._utils import extract_confirmed_pivots
 from tradetropy.ta.pattern.pivot_mixin import PivotIndicatorMixin
 
@@ -144,6 +144,8 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
         show_labels: bool = True,
         bull_color: str = "#0ECB81",
         bear_color: str = "#F6465D",
+        show_markers: bool = True,
+        label_position: str = "break",
     ):
         if break_on not in ("close", "wick"):
             from tradetropy.exceptions import ConfigError
@@ -151,12 +153,17 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
                 f"MarketStructure(break_on={break_on!r}): expected 'close' or 'wick'."
             )
 
+        if label_position not in ("break", "midpoint"):
+            from tradetropy.exceptions import ConfigError
+            raise ConfigError("MarketStructure label_position must be 'break' or 'midpoint'.")
+
         self.swing    = swing
         self.break_on = break_on
         self.length   = swing
 
         self.show_lines  = show_lines
         self.show_labels = show_labels
+        self.label_position = label_position
         self._bull_color = bull_color
         self._bear_color = bear_color
 
@@ -172,7 +179,7 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
 
         self.plot_config = IndicatorPlotConfig(
             overlay  = True,
-            renderer = "scatter",
+            renderer = "scatter" if show_markers else "none",
             color = [bull_color, bear_color, bull_color, bear_color],
             marker = [
                 "triangle",           # BOS bull
@@ -416,7 +423,8 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
             y.append(level)
             colors.append(color)
 
-            lab_x.append(int(ts_break))
+            lab_x.append(int((ts_origin + ts_break) / 2)
+                         if self.label_position == "midpoint" else int(ts_break))
             lab_y.append(level)
             lab_text.append("BOS" if tag.startswith("BOS") else "CHoCH")
             lab_color.append(color)
@@ -424,22 +432,19 @@ class MarketStructure(Indicator, PivotIndicatorMixin):
             (bos_idx if tag.startswith("BOS") else choch_idx).append(len(x0) - 1)
 
         if self.show_lines and x0:
-            # CHoCH lines are dashed to separate a reversal from a continuation
-            # at a glance; Segments carries one dash for the whole glyph, so
-            # they are emitted as two primitives.
-            for idxs, dash, alpha, width in (
-                (bos_idx,   "solid",  0.75, 1.4),
-                (choch_idx, "dashed", 0.85, 1.6),
-            ):
-                if not idxs:
-                    continue
+            # The renderer combines primitives of each type into one glyph.
+            if bos_idx:
+                prims.append(HLines(
+                    x0=[x0[k] for k in bos_idx], x1=[x1[k] for k in bos_idx],
+                    y=[y[k] for k in bos_idx], color=[colors[k] for k in bos_idx],
+                    alpha=0.75, width=1.4,
+                ))
+            if choch_idx:
                 prims.append(Segments(
-                    x0=[x0[k] for k in idxs],
-                    y0=[y[k] for k in idxs],
-                    x1=[x1[k] for k in idxs],
-                    y1=[y[k] for k in idxs],
-                    color=[colors[k] for k in idxs],
-                    alpha=alpha, width=width, dash=dash,
+                    x0=[x0[k] for k in choch_idx], x1=[x1[k] for k in choch_idx],
+                    y0=[y[k] for k in choch_idx], y1=[y[k] for k in choch_idx],
+                    color=[colors[k] for k in choch_idx],
+                    alpha=0.85, width=1.6, dash="dashed",
                 ))
 
         if self.show_labels and lab_x:

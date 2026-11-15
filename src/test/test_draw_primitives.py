@@ -3,6 +3,33 @@
 import numpy as np
 
 
+def test_manual_annotations_keep_per_item_style_when_updated():
+    from bokeh.plotting import figure
+    from tradetropy.plotting.render._tools import render_tool_groups
+    from tradetropy.ta import ManualBoxes, ManualLabels
+
+    boxes = ManualBoxes()
+    box_id = boxes.add_box(1.0, 2.0, 0, 60_000, line_width=1)
+    boxes.add_box(3.0, 4.0, 0, 60_000, line_width=3)
+    labels = ManualLabels()
+    labels.add_label(0, 1, "A", size="8pt", dx=2)
+    labels.add_label(0, 2, "B", size="12pt", dy=4)
+    fig = figure(x_axis_type="datetime")
+    registry = render_tool_groups(fig, {"Marks": boxes.draw() + labels.draw()},
+                                  theme=None, interval_ms=60_000)
+    assert list(registry[("Marks", "Rects")].data["line_width"]) == [1, 3]
+    source = registry[("Marks", "Labels")]
+    assert list(source.data["font_size"]) == ["8pt", "12pt"]
+    assert list(source.data["x_offset"]) == [2, 0]
+
+    boxes.update_box(box_id, line_width=2)
+    labels.clear()
+    render_tool_groups(fig, {"Marks": boxes.draw()}, theme=None,
+                       interval_ms=60_000, registry=registry, clear_missing=True)
+    assert list(registry[("Marks", "Rects")].data["line_width"]) == [2, 3]
+    assert all(len(values) == 0 for values in source.data.values())
+
+
 class TestSegmentsPrimitive:
     """The Segments primitive (arbitrary endpoints) renders via the generic path."""
 

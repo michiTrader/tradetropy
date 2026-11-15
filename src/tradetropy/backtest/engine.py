@@ -526,6 +526,7 @@ class BacktestEngine(_StoreBuilderMixin):
         derender_on_pan: bool = True,
         volume_alpha: float | None = None,
         legend_placement: str = "outside_top",
+        superimpose_wicks: bool = False,
     ) -> None:
         '''
         Generate interactive backtest chart.
@@ -575,12 +576,14 @@ class BacktestEngine(_StoreBuilderMixin):
             footer_text (str): Optional manual note rendered below the whole
                 chart (e.g. a disclaimer). Same HTML caveat as header_text.
                 None (default) renders nothing.
-            superimpose (bool | str): Overlay translucent, wick-less
+            superimpose (bool | str): Overlay translucent
                 higher-timeframe candle bodies behind the main OHLC. True
                 auto-selects a higher TF from the chart's own interval; a
                 string (e.g. '4h') sets it explicitly. False (default)
                 disables it. See PlotConfig.superimpose for the full
                 auto-selection rules.
+            superimpose_wicks (bool): Include high/low wicks on the overlay.
+                False (default) draws the candle bodies only.
             derender_on_pan (bool): Temporarily hide heavy overlay glyphs
                 (scatter markers, text labels) while dragging/wheel-zooming,
                 restoring them once the interaction settles. Default True;
@@ -631,6 +634,7 @@ class BacktestEngine(_StoreBuilderMixin):
             header_text=header_text,
             footer_text=footer_text,
             superimpose=superimpose,
+            superimpose_wicks=superimpose_wicks,
             derender_on_pan=derender_on_pan,
             volume_alpha=volume_alpha,
             legend_placement=legend_placement,

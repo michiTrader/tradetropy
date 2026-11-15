@@ -66,9 +66,7 @@ class VolumeProfileUpdateMixin:
         if refresh is not None:
             refresh(ref.source_proxy)
 
-        groups = _indicator_primitive_groups(ref.defn, ref.interval_ms)
-        if not groups:
-            return
+        groups = _indicator_primitive_groups(ref.defn, ref.interval_ms) or {}
         # Floor draw() geometry to the candle grid (parity with the static plot,
         # gated by the same PlotConfig flag carried on the ref).
         if getattr(ref, "align_to_candle", True):
@@ -82,6 +80,7 @@ class VolumeProfileUpdateMixin:
             show_legend=_resolve_show_legend(ref.defn),
             lazy_x_range=getattr(ref.fig, "x_range", None),
             lazy_zoom_range=ref.lazy_zoom_range,
+            clear_missing=True,
         )
         self._sync_autoscale_mirror(ref)
 

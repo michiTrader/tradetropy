@@ -1,46 +1,45 @@
-// Global derender: temporarily hide heavy overlay glyphs (scatter markers,
-// text labels) while the user is actively panning/zooming the chart, and
-// restore them once the interaction settles.
-//
-// Rationale: dragging or wheel-zooming a chart with many marker-based
-// indicators (e.g. NBS triangles, ConfirmedPivot labels) repaints every one
-// of those glyphs on every frame, which is what makes interaction feel
-// sluggish. Bar/line/step renderers are NOT covered here - they stay visible
-// and rely on level-of-detail decimation instead (decimate_candles.js /
-// decimate_points.js), because blanking a bar mid-drag reads as a visual
-// glitch in a way a handful of missing markers does not.
-//
-// Two distinct triggers drive the same show/hide logic:
-//   - PanStart/PanEnd (drag): an exact begin/end pair, no heuristic needed.
-//   - MouseWheel (zoom): has no "end" event, so a debounce timer stands in
-//     for PanEnd - the same pattern already used by lazy_labels.js.
-//
-// ``renderers`` and ``groups`` are parallel lists: ``groups[i]`` is the
-// renderer's legend group glyph (or null), so a renderer restored after the
-// interaction only becomes visible again if the user has not hidden its
-// legend entry in the meantime - mirroring lazy_labels.js's policy so pan
-// does not fight the user's own legend clicks.
-if (window._derender_timeout) clearTimeout(window._derender_timeout);
+// Preserve the visibility set by the legend across temporary pan/zoom hiding.
+// All panels in one chart share the x_range and the same gesture state.
+const states = window._tradetropyPanState ??= new WeakMap();
+const state = states.get(x_range) ?? {visible: null, dragging: false, timer: null};
+states.set(x_range, state);
 
-function _derender_hide() {
-    for (let i = 0; i < renderers.length; i++) {
-        renderers[i].visible = false;
+function hide() {
+    state.visible ??= new Map(renderers.map(renderer => [renderer, renderer.visible]));
+    for (const renderer of renderers) renderer.visible = false;
+    for (const label of labels) label.visible = false;
+}
+
+function restore() {
+    if (state.visible === null || state.dragging) return;
+    for (const [renderer, visible] of state.visible) renderer.visible = visible;
+    state.visible = null;
+    const zoomed_in = (x_range.end - x_range.start) / interval_ms <= zoom_range;
+    for (let i = 0; i < labels.length; i++) {
+        labels[i].visible = zoomed_in && (groups[i]?.visible ?? true);
     }
 }
 
-function _derender_restore() {
-    for (let i = 0; i < renderers.length; i++) {
-        const g = groups[i];
-        const group_on = (g === null || g === undefined) ? true : g.visible;
-        renderers[i].visible = group_on;
+if (kind === "legend") {
+    if (state.visible !== null) {
+        for (const renderer of cb_obj.item.renderers) {
+            if (state.visible.has(renderer)) {
+                state.visible.set(renderer, !state.visible.get(renderer));
+            }
+        }
+        // Bokeh applies its own toggle on the same pointer event.
+        queueMicrotask(() => { if (state.visible !== null) hide(); });
     }
-}
-
-if (kind === "start") {
-    _derender_hide();
-} else if (kind === "end") {
-    _derender_restore();
-} else if (kind === "wheel") {
-    _derender_hide();
-    window._derender_timeout = setTimeout(_derender_restore, 150);
+} else {
+    clearTimeout(state.timer);
+    if (kind === "start") {
+        state.dragging = true;
+        hide();
+    } else if (kind === "end") {
+        state.dragging = false;
+        restore();
+    } else if (kind === "wheel") {
+        hide();
+        state.timer = setTimeout(restore, 150);
+    }
 }

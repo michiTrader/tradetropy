@@ -251,7 +251,7 @@ class PlotConfig:
     footer_text          : Same as header_text but rendered as a Div BELOW the
                            whole layout (after every panel). None (default)
                            renders nothing extra.
-    superimpose          : Overlay translucent, wick-less candle BODIES of a
+    superimpose          : Overlay translucent candle bodies of a
                            higher timeframe behind the main OHLC (backtesting.
                            py-style), so the higher-TF trend/structure reads
                            through the finer candles. Accepts:
@@ -267,11 +267,12 @@ class PlotConfig:
                                be strictly greater than the chart's own
                                interval; otherwise a warning is emitted and
                                superimpose is skipped.
-                           Drawn as quads (open/close body only, no high/low
-                           wick), excluded from the OHLC Y-autoscale and from
+                           Excluded from the OHLC Y-autoscale and from
                            the pan/zoom derender registry (its geometry is
                            already a handful of bars, cheap to keep rendered).
                            Backtest-plot only; not available in the live chart.
+    superimpose_wicks    : Show high/low wicks with the superimposed candle
+                           bodies. Defaults to False (bodies only).
     derender_on_pan      : Temporarily hide heavy overlay glyphs (scatter
                            markers, text labels) while the user is actively
                            dragging or wheel-zooming the chart, restoring them
@@ -322,6 +323,7 @@ class PlotConfig:
     footer_text: str | None = None
     superimpose: bool | str = False
     derender_on_pan: bool = True
+    superimpose_wicks: bool = False
 
     def __post_init__(self):
         if self.show_price_tag:

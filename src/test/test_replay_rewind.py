@@ -28,6 +28,48 @@ from tradetropy.ta.volatility import BollingerBands
 from tradetropy.live.engine import LiveEngine
 
 
+def test_rewinding_zigzag_discards_pivots_not_yet_confirmed():
+    from bokeh.document import Document
+    from tradetropy.core.data_types import KlineData
+    from tradetropy.plotting.config import PlotConfig
+    from tradetropy.plotting.live.document import build_live_document
+    from tradetropy.ta import ZigZag
+
+    class ZigZagStrategy(Strategy):
+        warmup = 8
+
+        def init(self):
+            self.ohlc = self.subscribe_ohlc("SYM", "1m", window_size=100)
+            self.add_indicator(ZigZag.refs(self.ohlc), ZigZag(swing=2))
+
+    close = np.r_[np.arange(100, 121), [118, 116, 114, 112, 110, 108]]
+    ts = 1_700_000_040_000 + np.arange(len(close)) * 60_000
+    rows = np.column_stack([ts, close, close + .25, close - .25, close,
+                            np.ones(len(close)), np.zeros(len(close))])
+    klines = KlineData(symbol="SYM", data=rows, timeframe="1m", tick_size=.01)
+    engine = ReplayEngine.by_klines(ZigZagStrategy(), data=(klines,))
+    engine.prepare()
+    _, updater = build_live_document(
+        strategy=engine.strategy, config=PlotConfig(), max_candles=100,
+        broker=engine._sesh._broker, doc=Document(), replay_controller=engine._ctrl,
+        io_loop=None,
+    )
+    updater.populate_history(max_age_minutes=0)
+    source = updater._indicator_refs[0].bands[0].source
+
+    engine._rebuild_to_cursor({"SYM": 25})
+    updater.repopulate_after_topup()
+    np.testing.assert_array_equal(source.data["ts"], ts[[20]].astype("datetime64[ms]"))
+
+    engine._rebuild_to_cursor({"SYM": 21})
+    updater.repopulate_after_topup()
+    assert all(len(column) == 0 for column in source.data.values())
+
+    engine._rebuild_to_cursor({"SYM": 25})
+    updater.repopulate_after_topup()
+    assert list(source.data["value"]) == [120.25]
+
+
 def klines_to_ticks(klines: np.ndarray) -> np.ndarray:
     """Convert klines [N x 6/7] to a tick matrix [N x 7] using close as price."""
     klines = np.asarray(klines, dtype=np.float64)

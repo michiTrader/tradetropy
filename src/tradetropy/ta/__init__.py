@@ -56,6 +56,7 @@ from tradetropy.ta.annotations import (
     CandlePatterns,
 )
 from tradetropy.ta.manual_marks import ManualMarks
+from tradetropy.ta.manual_annotations import ManualBoxes, ManualLabels
 from tradetropy.ta.order_flow import (
     LargeTrades,
     DeepTrades,
@@ -82,7 +83,15 @@ from tradetropy.ta.order_blocks import (
     Block,
     Pivot,
     find_order_blocks,
+    find_breaker_blocks,
+    find_propulsion_blocks,
+    find_rejection_blocks,
+    find_vacuum_blocks,
     SmcOrderBlock,
+    SmcBreakerBlock,
+    SmcPropulsionBlock,
+    SmcRejectionBlock,
+    SmcVacuumBlock,
     blocks_to_rects,
     pack_active_bands,
 )

@@ -9,35 +9,16 @@ from .._util import (
 )
 
 
-def render_superimpose(fig, source, theme: dict, interval_label: str):
-    """
-    Draw translucent higher-timeframe candle BODIES behind the main OHLC.
-
-    Only the open/close body (a quad) is drawn - no high/low wick - so the
-    higher-TF structure reads as soft blocks behind the finer candles
-    (backtesting.py-style), never competing visually with them. Placed at
-    ``level="underlay"`` so it always sits behind the real candles/volume
-    regardless of renderer add order.
-
-    Args:
-        fig: OHLC figure.
-        source: ColumnDataSource built by ``build_ohlc_source`` on the
-            resampled higher-timeframe array (provides ts_left/ts_right/
-            top_body/bottom_body/inc).
-        theme (dict): Plot theme (candle colors reused for the body fill).
-        interval_label (str): Human label for the target timeframe (e.g.
-            "4h"), used in the legend entry.
-
-    Returns:
-        The quad GlyphRenderer (for exclusion from autoscale/derender
-        registries by the caller).
-    """
+def render_superimpose(fig, source, theme: dict, interval_label: str, *,
+                       show_wicks: bool = False):
+    """Draw the higher-timeframe candles behind the main OHLC."""
     from bokeh.transform import factor_cmap
 
     colors = [theme["candle_down"], theme["candle_up"]]
     cmap = factor_cmap("inc", colors, ["0", "1"])
+    legend = f"Superimpose {interval_label}"
 
-    return fig.quad(
+    body = fig.quad(
         left="ts_left", right="ts_right",
         top="top_body", bottom="bottom_body",
         source=source,
@@ -47,8 +28,18 @@ def render_superimpose(fig, source, theme: dict, interval_label: str):
         line_alpha=0.35,
         line_width=1.0,
         level="underlay",
-        legend_label=f"Superimpose {interval_label}",
+        legend_label=legend,
     )
+    if show_wicks:
+        fig.segment(
+            x0="ts", x1="ts", y0="Low", y1="bottom_body", source=source,
+            line_color=cmap, line_alpha=0.35, level="underlay", legend_label=legend,
+        )
+        fig.segment(
+            x0="ts", x1="ts", y0="top_body", y1="High", source=source,
+            line_color=cmap, line_alpha=0.35, level="underlay", legend_label=legend,
+        )
+    return body
 
 
 def render_ohlc(fig, source, theme: dict, config: PlotConfig, interval_ms: int, symbol: str, price_digits: int = 2) -> None:

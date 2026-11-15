@@ -6,7 +6,7 @@ from tradetropy.ta.base import Indicator, IndicatorPlotConfig
 
 
 def _mitigated_rects(bull_items, bear_items, show_mitigated, cfg, interval_ms,
-                     extend_mult):
+                     extend_mult, mitigated_fill_alpha=None):
     """
     Build one Rects primitive for mitigation-based zone annotations (FVG / OB).
 
@@ -41,6 +41,7 @@ def _mitigated_rects(bull_items, bear_items, show_mitigated, cfg, interval_ms,
     line_a = getattr(cfg, "rect_line_alpha", 0.55) if cfg else 0.55
     line_w = getattr(cfg, "rect_line_width", 1.0) if cfg else 1.0
     mit_factor = 0.35
+    mitigated_fill = fill_a * mit_factor if mitigated_fill_alpha is None else mitigated_fill_alpha
     extend_ms = int((interval_ms or 60_000) * extend_mult)
 
     x0, x1, y0, y1, fills, lines, fas, las = [], [], [], [], [], [], [], []
@@ -58,7 +59,7 @@ def _mitigated_rects(bull_items, bear_items, show_mitigated, cfg, interval_ms,
             y1.append(float(top))
             fills.append(color)
             lines.append(color)
-            fas.append(fill_a * (mit_factor if mitigated else 1.0))
+            fas.append(mitigated_fill if mitigated else fill_a)
             las.append(line_a * (mit_factor if mitigated else 1.0))
 
     if not x0:
@@ -1435,6 +1436,7 @@ class OrderBlock(Indicator):
                              (default True)
         show_mitigated : bool - True -> shows already-mitigated OBs, more faint
                                 (default False)
+        mitigated_fill_alpha : Optional fill opacity for mitigated blocks.
 
     Usage:
         class MyStrategy(Strategy):
@@ -1471,11 +1473,14 @@ class OrderBlock(Indicator):
         show_mitigated: bool = False,
         bull_color: str = "#0ECB81",
         bear_color: str = "#F6465D",
+        *,
+        mitigated_fill_alpha: float | None = None,
     ):
         self.atr_period     = atr_period
         self.atr_mult       = atr_mult
         self.mitigate       = mitigate
         self.show_mitigated = show_mitigated
+        self.mitigated_fill_alpha = mitigated_fill_alpha
         self.length         = atr_period
 
         self.plot_config = IndicatorPlotConfig(
@@ -1640,6 +1645,7 @@ class OrderBlock(Indicator):
             getattr(self, "_bear_obs", []),
             getattr(self, "_show_mitigated", False),
             cfg, interval_ms, extend_mult=20,
+            mitigated_fill_alpha=self.mitigated_fill_alpha,
         )
 
 

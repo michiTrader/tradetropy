@@ -887,6 +887,10 @@ class BaseEngine(LiveEngine):
         for rings in self._fp_rings.values():
             for r in rings:
                 r.reset()
+        for definition in self.strategy._indicator_defs:
+            reset = getattr(definition["indicator"], "reset_for_replay", None)
+            if callable(reset):
+                reset()
 
         # Reset replayed book rings and their cursor so a rewind re-feeds the
         # recorded book from the start in lockstep with the ticks.

@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import numpy as np
 
-from tradetropy.core.constants import _OHLC_COL, N_OHLC_COLS
+from tradetropy.core.constants import _OHLC_COL
 from tradetropy.plotting.live.updater._refs import _BandRef
 
 if TYPE_CHECKING:
-    from tradetropy.data.data import OhlcProxy, IndicatorProxy, MultiBandProxy
+    from tradetropy.data.data import IndicatorProxy, MultiBandProxy
     from tradetropy.plotting.live.updater._refs import _IndicatorSourceRef
 
 
@@ -110,41 +110,6 @@ class IndicatorUpdateMixin:
             d["bar_color"] = bc
         band.source.stream(d, rollover=self._max_candles)
 
-    def _resolve_ts_for_band(
-        self,
-        proxy: "IndicatorProxy | MultiBandProxy",
-        band: _BandRef,
-        ohlc_proxy: "OhlcProxy",
-        ts_ms_fallback: int,
-    ) -> int:
-        if not band.is_stateful:
-            return ts_ms_fallback
-
-        from tradetropy.data.data import MultiBandProxy as _MBP
-
-        try:
-            if not isinstance(proxy, _MBP):
-                return self._ts_ultima_cerrada(ohlc_proxy) or ts_ms_fallback
-
-            ts_band_indices = getattr(proxy, "_ts_band_indices", [])
-            if not ts_band_indices:
-                return self._ts_ultima_cerrada(ohlc_proxy) or ts_ms_fallback
-
-            output_names = getattr(proxy, "_output_names", [])
-            price_band_pos = band.band_idx
-            if price_band_pos < len(ts_band_indices):
-                ts_band_idx = ts_band_indices[price_band_pos]
-                ts_view = proxy[ts_band_idx]
-                if ts_view is not None and len(ts_view) >= 2:
-                    ts_raw = float(ts_view[-2])
-                    if np.isfinite(ts_raw) and ts_raw > 1_000_000_000_000:
-                        return int(ts_raw)
-
-        except Exception:
-            pass
-
-        return self._ts_ultima_cerrada(ohlc_proxy) or ts_ms_fallback
-
     def _stream_new_pivots(
         self,
         ref: "_IndicatorSourceRef",
@@ -152,111 +117,29 @@ class IndicatorUpdateMixin:
         ring,
         col_idx: int,
     ) -> None:
-        from tradetropy.data.data import MultiBandProxy as _MBP
-
-        proxy = ref.proxy
-        W = ring._W
-        n = min(ring._n_closed, W)
+        n = min(ring._n_closed, ring._W)
         if n == 0:
             return
 
-        ts_col_idx: "int | None" = None
-        if isinstance(proxy, _MBP):
-            ts_band_indices = getattr(proxy, "_ts_band_indices", [])
-            if ts_band_indices and band.band_idx < len(ts_band_indices):
-                ts_band_idx  = ts_band_indices[band.band_idx]
-                suffix_price = f"_b{band.band_idx}"
-                suffix_ts    = f"_b{ts_band_idx}"
-                if band.col_name.endswith(suffix_price):
-                    ts_col_name = band.col_name[:-len(suffix_price)] + suffix_ts
-                    ts_col_idx  = ring.col_index.get(ts_col_name)
-
-        price_vals = ring.closed_window(col_idx, n)
-        if ts_col_idx is not None:
-            ts_vals = ring.closed_window(ts_col_idx, n).astype(np.float64)
-        else:
-            ts_vals = ring.closed_window(_OHLC_COL["ts"], n).astype(np.float64)
-
-        src = band.source
-        existing_ts = src.data["ts"]
-        if len(existing_ts) > 0:
-            last_graficado = int(np.datetime64(existing_ts[-1], "ms").astype(np.int64))
-        else:
-            last_graficado = 0
-
-        for i in range(n):
-            pval = float(price_vals[i])
-            if not np.isfinite(pval):
-                continue
-
-            ts_raw = float(ts_vals[i])
-            if not np.isfinite(ts_raw) or ts_raw <= 0:
-                continue
-
-            ts_int = int(ts_raw)
-
-            if ts_int <= last_graficado:
-                continue
-
-            ts_dt = np.datetime64(ts_int, "ms")
-
-            if len(src.data["ts"]) > 0 and src.data["ts"][-1] == ts_dt:
-                src.patch({"value": [(len(src.data["ts"]) - 1, pval)]})
-            else:
-                src.stream(
-                    {"ts": [ts_dt], "value": [pval], "tag": [band.tag_label]},
-                    rollover=self._max_candles,
-                )
-            last_graficado = ts_int
-
-    def _ts_ultima_cerrada(self, ohlc_proxy: "OhlcProxy") -> "int | None":
-        ring = ohlc_proxy._ohlc_ring
-        if ring is None or ring._n_closed == 0:
-            return None
-        p_last = (ring._head - 1) % ring._W
-        ts = int(ring._buf[p_last, _OHLC_COL["ts"]])
-        return ts if ts > 0 else None
-
-    def _ts_para_pivot(
-        self,
-        ref: "_IndicatorSourceRef",
-        band: "_BandRef",
-        ring,
-    ) -> "int | None":
-        from tradetropy.data.data import MultiBandProxy as _MBP
-        proxy = ref.proxy
-        if not isinstance(proxy, _MBP):
-            return None
-
-        ts_band_indices = getattr(proxy, "_ts_band_indices", [])
-        if not ts_band_indices or band.band_idx >= len(ts_band_indices):
-            return None
-
-        ts_band_idx = ts_band_indices[band.band_idx]
-
-        price_col_name = band.col_name
-        if not price_col_name:
-            return None
-
-        suffix_price = f"_b{band.band_idx}"
-        suffix_ts    = f"_b{ts_band_idx}"
-        if not price_col_name.endswith(suffix_price):
-            return None
-
-        ts_col_name = price_col_name[:-len(suffix_price)] + suffix_ts
-        ts_col_idx  = ring.col_index.get(ts_col_name)
-        if ts_col_idx is None:
-            return None
-
-        if ring._n_closed == 0:
-            return None
-
-        p = (ring._head - 1) % ring._W
-        raw = float(ring._buf[p, ts_col_idx])
-
-        if np.isfinite(raw) and raw > 1_000_000_000_000:
-            return int(raw)
-        return None
+        prices = ring.closed_window(col_idx, n)
+        closed_ts = ring.closed_window(_OHLC_COL["ts"], n)
+        timestamps = self._event_timestamps(ref, band, ring, closed_ts)
+        mask = np.isfinite(prices) & np.isfinite(timestamps)
+        existing = band.source.data["ts"]
+        if len(existing):
+            last = np.datetime64(existing[-1], "ms").astype(np.int64)
+            mask &= timestamps > last
+        if np.any(mask):
+            values = prices[mask]
+            data = {
+                "ts": timestamps[mask].astype("datetime64[ms]"),
+                "value": values,
+                "tag": np.full(len(values), band.tag_label, dtype=object),
+            }
+            colors = self._bar_color_arr(band, values)
+            if colors is not None:
+                data["bar_color"] = colors
+            band.source.stream(data, rollover=self._max_candles)
 
     def _read_band_value(
         self,
@@ -279,113 +162,53 @@ class IndicatorUpdateMixin:
             return None
 
     def _populate_indicator_history(self) -> None:
-        for i_ref, ref in enumerate(self._indicator_refs):
+        for ref in self._indicator_refs:
             ring = ref.ohlc_proxy._ohlc_ring
             if ring is None:
                 continue
 
             n = min(ring._n_closed, self._max_candles)
-
-            ts_arr = np.array([], dtype="datetime64[ms]")
-            if n > 0:
-                ts_col = ring.closed_window(_OHLC_COL["ts"], n).copy()
-                ts_arr = ts_col.astype("datetime64[ms]")
-                n = len(ts_arr)
+            closed_ts = (
+                ring.closed_window(_OHLC_COL["ts"], n) if n else np.empty(0)
+            )
 
             for band in ref.bands:
                 if band.is_ts_band:
                     continue
 
                 col_idx = self._find_ind_col_idx(ref.proxy, band, ring)
+                values = np.empty(0)
+                timestamps = np.empty(0)
+                if n and col_idx is not None:
+                    vals = ring.closed_window(col_idx, n)
+                    ts = self._event_timestamps(ref, band, ring, closed_ts)
+                    valid = np.isfinite(vals) & np.isfinite(ts)
+                    values, timestamps = vals[valid], ts[valid]
 
-                if n > 0:
-                    if col_idx is not None:
-                        vals = ring.closed_window(col_idx, n).copy()
-                        min_len = min(len(vals), len(ts_arr))
-                        vals    = vals[:min_len]
-                        ts_sub  = ts_arr[:min_len]
-                        valid = np.isfinite(vals)
+                if not (band.is_stateful or band.has_real_ts) and ring._ts_current_candle >= 0:
+                    value = self._read_band_value(ref.proxy, band.band_idx)
+                    if value is not None:
+                        timestamps = np.append(timestamps, ring._ts_current_candle)
+                        values = np.append(values, value)
 
-                        if np.any(valid) and band.is_stateful:
-                            ts_pivot = self._ts_band_history_for_pivot(
-                                ref, band, ring, n
-                            )
-                            if ts_pivot is not None:
-                                valid_ts = np.isfinite(ts_pivot) & (ts_pivot > 1_000_000_000_000)
-                                mask = valid & valid_ts
-                                if np.any(mask):
-                                    n_mask = int(mask.sum())
-                                    band.source.data = {
-                                        "ts":    ts_pivot[mask].astype("datetime64[ms]"),
-                                        "value": vals[mask],
-                                        "tag":   np.full(n_mask, band.tag_label, dtype=object),
-                                    }
-                            else:
-                                if np.any(valid):
-                                    n_valid = int(valid.sum())
-                                    band.source.data = {
-                                        "ts":    ts_sub[valid],
-                                        "value": vals[valid],
-                                        "tag":   np.full(n_valid, band.tag_label, dtype=object),
-                                    }
-                        elif np.any(valid):
-                            n_valid = int(valid.sum())
-                            _data = {
-                                "ts":    ts_sub[valid],
-                                "value": vals[valid],
-                                "tag":   np.full(n_valid, band.tag_label, dtype=object),
-                            }
-                            _bc = self._bar_color_arr(band, vals[valid])
-                            if _bc is not None:
-                                _data["bar_color"] = _bc
-                            band.source.data = _data
+                # Replace even empty histories: a pivot may be plotted before
+                # the cursor but only become confirmed after it.
+                data = {
+                    "ts": timestamps.astype("datetime64[ms]"),
+                    "value": values,
+                    "tag": np.full(len(values), band.tag_label, dtype=object),
+                }
+                colors = self._bar_color_arr(band, values)
+                if colors is not None:
+                    data["bar_color"] = colors
+                band.source.data = data
 
-                if not band.is_stateful and ring._ts_current_candle >= 0:
-                    ts_partial = int(ring._ts_current_candle)
-                    val_p = self._read_band_value(ref.proxy, band.band_idx, is_stateful=False)
-                    if val_p is not None:
-                        ts_dt = np.datetime64(ts_partial, "ms")
-                        src = band.source
-                        existing = src.data["ts"]
-
-                        n_antes = len(existing)
-                        last_ts_antes = int(np.datetime64(existing[-1], "ms").astype(np.int64)) if n_antes > 0 else -1
-
-                        def _partial_stream_dict():
-                            d = {"ts": [ts_dt], "value": [float(val_p)],
-                                 "tag": [band.tag_label]}
-                            if band.bar_pos_color is not None:
-                                d["bar_color"] = [
-                                    band.bar_pos_color if val_p >= 0 else band.bar_neg_color
-                                ]
-                            return d
-
-                        if len(existing) == 0:
-                            src.stream(_partial_stream_dict(), rollover=self._max_candles)
-                        elif existing[-1] == ts_dt:
-                            _patch = {"value": [(len(existing) - 1, float(val_p))]}
-                            if band.bar_pos_color is not None:
-                                c = band.bar_pos_color if val_p >= 0 else band.bar_neg_color
-                                _patch["bar_color"] = [(len(existing) - 1, c)]
-                            src.patch(_patch)
-                        else:
-                            last_ms = int(np.datetime64(existing[-1], "ms").astype(np.int64))
-                            gap_ms = ts_partial - last_ms
-                            if 0 < gap_ms <= self._ohlc_refs[0].interval_ms * 2:
-                                src.stream(_partial_stream_dict(), rollover=self._max_candles)
-
-            # if i_ref < 3:
-            #     for band in ref.bands:
-            #         if band.is_ts_band:
-            #             continue
-            #         ts_b = band.source.data.get("ts", [])
-            #         print(f"[DBG IND] ref[{i_ref}] band[{band.band_idx}] "
-            #               f"n_source={len(ts_b)}", end="")
-            #         if len(ts_b) > 0:
-            #             t0 = int(np.datetime64(ts_b[0],  "ms").astype(np.int64))
-            #             t1 = int(np.datetime64(ts_b[-1], "ms").astype(np.int64))
-            #             print(f"  ts[0]={t0}  ts[-1]={t1}", end="")
-            #         print()
+    def _event_timestamps(self, ref, band, ring, closed_ts: np.ndarray) -> np.ndarray:
+        if band.has_real_ts:
+            event_ts = self._ts_band_history_for_pivot(ref, band, ring, len(closed_ts))
+            if event_ts is not None:
+                return np.where(np.isfinite(event_ts), event_ts, closed_ts)
+        return closed_ts
 
     def _ts_band_history_for_pivot(
         self,

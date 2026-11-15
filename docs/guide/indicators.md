@@ -211,4 +211,35 @@ same generic renderer draws them in both charts.
     converge before the first `on_data()`, keeping backtest and live/replay in
     parity. `RSI` and `MACD` use `warmup_factor = 5`.
 
+## SMC blocks
+
+`SmcOrderBlock`, `SmcBreakerBlock`, `SmcRejectionBlock`, `SmcPropulsionBlock`,
+and `SmcVacuumBlock` share the same OHLCV input order and output layout.
+Register one with `add_indicator()` and its `refs()` method.
+
+```python
+from tradetropy.ta import SmcBreakerBlock
+
+breaker = SmcBreakerBlock(zone="body", mss_window=3)
+self.breakers = self.add_indicator(breaker.refs(self.ohlc), breaker)
+```
+
+The four price bands are `bull_top`, `bull_bot`, `bear_top`, and `bear_bot`.
+They contain the newest active zone on each side from its confirmation bar
+through the bar before mitigation. `ts_bull_open` and `ts_bear_open` give the
+active zone's origin. `ts_bull_close` and `ts_bear_close` mark mitigation of the
+previously active zone on the bar that confirms it.
+
+The four derived indicators use closed candles. Pass the last closed candle's
+timestamp to `blocks_upto()` or `newest_live()` to query what was known then.
+Use `at_span()` to find a block from its swing or origin timestamp. The pure
+`find_*_blocks()` functions in `tradetropy.ta.order_blocks` accept arrays with
+columns `ts, open, high, low, close, volume` and return `Block` records. Indices
+are relative to the input window. Use the timestamps to compare engines.
+
+For chart annotations, `ManualBoxes` draws custom rectangles and `ManualLabels`
+adds text. `MarketStructure(show_markers=False, label_position="midpoint")`
+places BOS and CHoCH labels along their lines. `OrderBlock` also accepts
+`mitigated_fill_alpha` to control the shading of mitigated zones.
+
 See the full API in the [Indicators reference](../reference/indicators.md).

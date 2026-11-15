@@ -4,6 +4,21 @@ All notable changes to Tradetropy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- `superimpose_wicks=True` draws higher-timeframe wicks in backtest charts.
+- SMC breaker, rejection, propulsion, and vacuum blocks, with closed-candle
+  indicators and causal queries, plus `ManualBoxes` and `ManualLabels`.
+
+### Fixed
+
+- Chart pan and zoom preserve marker visibility set through the legend.
+- Replay clears indicator points and drawings whose confirmation is beyond
+  the rewind cursor.
+- SMC queries and bands expose mitigation when its candle closes.
+
 ## [0.3.3] - 2026-11-13
 
 ### Fixed

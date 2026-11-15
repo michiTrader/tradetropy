@@ -226,6 +226,7 @@ def find_mitigation(top: float, bottom: float, kind: str, high: np.ndarray,
                "close strictly inside the band" test would miss those.
         mean   price reaches the 50% level (demand: low <= mean; supply:
                high >= mean).
+        mean_close  price closes at or beyond the 50% level.
     """
     mean = (top + bottom) / 2.0
     for k in range(start_idx, len(close)):
@@ -235,6 +236,10 @@ def find_mitigation(top: float, bottom: float, kind: str, high: np.ndarray,
         elif mode == "mean":
             if (kind == BULLISH and low[k] <= mean) or \
                (kind == BEARISH and high[k] >= mean):
+                return k
+        elif mode == "mean_close":
+            if (kind == BULLISH and close[k] <= mean) or \
+               (kind == BEARISH and close[k] >= mean):
                 return k
         else:  # "close" — body closes past the proximal edge
             if (kind == BULLISH and close[k] <= top) or \
