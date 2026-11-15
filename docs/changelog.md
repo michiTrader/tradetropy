@@ -4,6 +4,18 @@ The canonical changelog lives in
 [`CHANGELOG.md`](https://github.com/michiTrader/tradetropy/blob/main/CHANGELOG.md)
 at the repository root. Highlights below.
 
+## [0.3.4] - 2026-11-15
+
+- Added SMC breaker, rejection, propulsion, and vacuum block indicators, plus
+  `ManualBoxes` and `ManualLabels`.
+- Added optional higher-timeframe wicks with `superimpose_wicks=True`.
+- Preserved hidden chart markers during pan and zoom, cleared unconfirmed
+  indicator points on replay rewind, and corrected SMC mitigation timing.
+
+## [0.3.3] - 2026-11-13
+
+- Fixed the live MT5 connector to pass trade request fields as keyword arguments.
+
 ## [0.3.2] - 2026-11-03
 
 ### Added
